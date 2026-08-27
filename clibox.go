@@ -2,7 +2,4 @@
 package clibox
 
 import (
-	"github.com/Tyy47/clibox/colors"
 )
-
-
