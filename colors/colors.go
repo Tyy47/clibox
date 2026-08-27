@@ -3,8 +3,8 @@ package colors
 
 import (
 	"fmt"
+	"strings"
 )
-
 
 // validColors holds a collection of all valid possible colors the terminal can produce.
 var validColors = map[string]map[string]string{
@@ -17,7 +17,6 @@ var validColors = map[string]map[string]string{
          "Magenta": "\033[0;35m",
          "Cyan":    "\033[0;36m",
          "White":   "\033[0;37m",
-         "Reset":   "\033[0m",
       },
       "Bold": {
          "Black":   "\033[1;30m",
@@ -28,7 +27,6 @@ var validColors = map[string]map[string]string{
          "Magenta": "\033[1;35m",
          "Cyan":    "\033[1;36m",
          "White":   "\033[1;37m",
-         "Reset":   "\033[0m",
       },
       "HighIntensity": {
          "Black":   "\033[0;90m",
@@ -39,7 +37,6 @@ var validColors = map[string]map[string]string{
          "Magenta": "\033[0;95m",
          "Cyan":    "\033[0;96m",
          "White":   "\033[0;97m",
-         "Reset":   "\033[0m",
       },
       "HighIntensity-Bold": {
          "Black":   "\033[1;90m",
@@ -50,20 +47,8 @@ var validColors = map[string]map[string]string{
          "Magenta": "\033[1;95m",
          "Cyan":    "\033[1;96m",
          "White":   "\033[1;97m",
-         "Reset":   "\033[0m",
       },
 }
-
-// colorOptionWeight is a type to store the weight of a selected color option.
-// Color options will be overwritten depending on the weight of the option selected.
-type colorOptionWeight int
-
-const (
-	colorNormal colorOptionWeight = iota
-	colorBold
-	colorHighIntensity
-	colorHighIntensityBold
-)
 
 // color is a created object that is meant for a type for color objects to be used.
 //
@@ -85,30 +70,61 @@ var (
 	boldColors = validColors["Bold"]
 	highIntensity = validColors["HighIntensity"]
 	highIntensityBold = validColors["HighIntensityBold"]
+	reset string = "\033[0m"
 )
 
 // Goal:
 // Black("Hello, World").Bold()
 
 func Black(v any) *color {
-	blackText := color{
-		Value: fmt.Sprint(v),
-	}
+	var text color
 
-	blackText.Value = normalColors["Black"] + blackText.Value + normalColors["Reset"]
+	text.chosenColor = "black"
 
-	return &blackText
+	text.Value = normalColors["Black"] + fmt.Sprint(v) + reset
+
+	return &text
 }
 
+func Red(v any) *color {
+	var text color
+
+	text.chosenColor = "red"
+
+	text.Value = normalColors["Red"] + fmt.Sprint(v) + reset
+
+	return &text
+}
 
 
 // Sets the color bold member to true to apply bold to a given value.
-func (c *color) Bold() {
+func (c *color) Bold() string {
+	for k, v := range boldColors {
+		if strings.ToLower(k) == c.chosenColor {
+			return v + c.Value + reset
+		}
+	}
+
+	return c.Value
 }
 
 // Sets the color highIntensity member to true to apply high intensity to a given value
-func (c *color) HighIntensity() {
+func (c *color) HighIntensity() string {
+	for k, v := range highIntensity {
+		if strings.ToLower(k) == c.chosenColor {
+			return v + c.Value + reset
+		}
+	}
+
+	return c.Value
 }
 
-func (c *color) HighItensityBold() {
+func (c *color) HighItensityBold() string {
+	for k, v := range highIntensityBold {
+		if strings.ToLower(k) == c.chosenColor {
+			return v + c.Value + reset
+		}
+	}
+
+	return c.Value
 }
