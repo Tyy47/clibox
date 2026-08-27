@@ -1,6 +1,10 @@
 // Package colors for clibox includes a bunch of utilies to create colored strings and custom titles for your cli tool.
 package colors
 
+import (
+	"fmt"
+)
+
 
 // validColors holds a collection of all valid possible colors the terminal can produce.
 var validColors = map[string]map[string]string{
@@ -61,7 +65,7 @@ const (
 	colorHighIntensityBold
 )
 
-// TitleBuilder is a created object where you create your title for your CLI program/tool.
+// color is a created object that is meant for a type for color objects to be used.
 //
 // Arguments:
 //	Title - The name you want to display.
@@ -70,18 +74,41 @@ const (
 //	Bold - Toggle to have text be bold when created.
 //	HighIntensity - Toggle to have the text be high intensity when created.
 //	HighIntensityBold - Toggle to have the text be high intensity and bold when created.
-type TitleBuilder struct {
-	Title string
-	Color string
-	Normal bool
-	Bold bool
-	HighIntensity bool
-	HighIntensityBold bool
+type color struct {
+	Value string // Stores the users inputted string
+	chosenColor string // Stores the users color for retrieval in later functions
 }
 
-// Build starts the creation process of a title using all of the arguments from the TitleBuilder struct.
-func (t *TitleBuilder) Build() {
-	
-	var colorWeighting colorOptionWeight
+// Variable array initializing all of the available colors to choose from.
+var (
+	normalColors = validColors["Normal"]
+	boldColors = validColors["Bold"]
+	highIntensity = validColors["HighIntensity"]
+	highIntensityBold = validColors["HighIntensityBold"]
+)
 
+// Goal:
+// Black("Hello, World").Bold()
+
+func Black(v any) *color {
+	blackText := color{
+		Value: fmt.Sprint(v),
+	}
+
+	blackText.Value = normalColors["Black"] + blackText.Value + normalColors["Reset"]
+
+	return &blackText
+}
+
+
+
+// Sets the color bold member to true to apply bold to a given value.
+func (c *color) Bold() {
+}
+
+// Sets the color highIntensity member to true to apply high intensity to a given value
+func (c *color) HighIntensity() {
+}
+
+func (c *color) HighItensityBold() {
 }
