@@ -1,9 +1,8 @@
-// Package colors for clibox includes a bunch of utilies to create colored strings and custom titles for your cli tool.
+// Package colors for clibox includes a bunch of utilities to create colored strings and custom titles for your cli tool.
 package colors
 
 import (
 	"fmt"
-	"strings"
 )
 
 // validColors holds a collection of all valid possible colors the terminal can produce.
@@ -73,15 +72,12 @@ var (
 	reset string = "\033[0m"
 )
 
-// Goal:
-// Black("Hello, World").Bold()
-
 func Black(v any) *color {
 	var text color
 
-	text.chosenColor = "black"
+	text.chosenColor = "Black"
 
-	text.Value = normalColors["Black"] + fmt.Sprint(v) + reset
+	text.Value = fmt.Sprint(v)
 
 	return &text
 }
@@ -89,20 +85,85 @@ func Black(v any) *color {
 func Red(v any) *color {
 	var text color
 
-	text.chosenColor = "red"
+	text.chosenColor = "Red"
 
-	text.Value = normalColors["Red"] + fmt.Sprint(v) + reset
+	text.Value = fmt.Sprint(v)
 
 	return &text
 }
 
+func Green(v any) *color {
+	var text color
+
+	text.chosenColor = "Green"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func Yellow(v any) *color {
+	var text color
+
+	text.chosenColor = "Yellow"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func Blue(v any) *color {
+	var text color 
+
+	text.chosenColor = "Blue"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func Magenta(v any) *color {
+	var text color 
+
+	text.chosenColor = "Magenta"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func Cyan(v any) *color {
+	var text color 
+
+	text.chosenColor = "Cyan"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func White(v any) *color {
+	var text color 
+
+	text.chosenColor = "White"
+
+	text.Value = fmt.Sprint(v)
+
+	return &text
+}
+
+func (c *color) ToString() string {
+	if color, ok := normalColors[c.chosenColor]; ok {
+		return color + c.Value + reset
+	}
+
+	return c.Value
+}
 
 // Sets the color bold member to true to apply bold to a given value.
 func (c *color) Bold() string {
-	for k, v := range boldColors {
-		if strings.ToLower(k) == c.chosenColor {
-			return v + c.Value + reset
-		}
+	if color, ok := boldColors[c.chosenColor]; ok {
+		return color + c.Value + reset
 	}
 
 	return c.Value
@@ -110,20 +171,16 @@ func (c *color) Bold() string {
 
 // Sets the color highIntensity member to true to apply high intensity to a given value
 func (c *color) HighIntensity() string {
-	for k, v := range highIntensity {
-		if strings.ToLower(k) == c.chosenColor {
-			return v + c.Value + reset
-		}
+	if color, ok := highIntensity[c.chosenColor]; ok {
+		return color + c.Value + reset
 	}
 
 	return c.Value
 }
 
-func (c *color) HighItensityBold() string {
-	for k, v := range highIntensityBold {
-		if strings.ToLower(k) == c.chosenColor {
-			return v + c.Value + reset
-		}
+func (c *color) HighIntensityBold() string {
+	if color, ok := highIntensityBold[c.chosenColor]; ok {
+		return color + c.Value + reset
 	}
 
 	return c.Value
