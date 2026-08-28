@@ -49,21 +49,17 @@ var validColors = map[string]map[string]string{
       },
 }
 
-// color is a created object that is meant for a type for color objects to be used.
+// color is a private module object to store color related information to use when calling color functions.
 //
-// Arguments:
-//	Title - The name you want to display.
-//	Color - The color you want to set to your title.
-//	Normal - Toggle to have text be normal when created.
-//	Bold - Toggle to have text be bold when created.
-//	HighIntensity - Toggle to have the text be high intensity when created.
-//	HighIntensityBold - Toggle to have the text be high intensity and bold when created.
+// Members:
+//	- Value: Stores the users inputted string to use in struct methods
+//  - chosenColor: Stores the chosen color in a variable to be called upon later when converting the color object to a string
 type color struct {
 	Value string // Stores the users inputted string
 	chosenColor string // Stores the users color for retrieval in later functions
 }
 
-// Variable array initializing all of the available colors to choose from.
+// Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
 var (
 	normalColors = validColors["Normal"]
 	boldColors = validColors["Bold"]
@@ -152,6 +148,7 @@ func White(v any) *color {
 	return &text
 }
 
+// ToString converts the color object given by a color function to a string.
 func (c *color) ToString() string {
 	if color, ok := normalColors[c.chosenColor]; ok {
 		return color + c.Value + reset
