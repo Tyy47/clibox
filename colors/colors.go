@@ -65,10 +65,10 @@ type Color struct {
 
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
 var (
-	normalColors = validColors["Normal"]
-	boldColors = validColors["Bold"]
-	highIntensity = validColors["HighIntensity"]
-	highIntensityBold = validColors["HighIntensityBold"]
+	normalColors = validColors["normal"]
+	boldColors = validColors["bold"]
+	highIntensity = validColors["highIntensity"]
+	highIntensityBold = validColors["highIntensityBold"]
 	reset string = "\033[0m"
 )
 
@@ -128,7 +128,6 @@ func White(v any) *Color {
 	}
 }
 
-// ToString converts the color object given by a color function to a string.
 func (c *Color) String() string {
 	var escapeCode string
 
