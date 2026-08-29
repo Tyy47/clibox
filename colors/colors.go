@@ -68,7 +68,7 @@ var (
 	normalColors = validColors["normal"]
 	boldColors = validColors["bold"]
 	highIntensity = validColors["highIntensity"]
-	highIntensityBold = validColors["highIntensityBold"]
+	highIntensityBold = validColors["highIntensity-Bold"]
 	reset string = "\033[0m"
 )
 
