@@ -7,45 +7,45 @@ import (
 
 // validColors holds a collection of all valid possible colors the terminal can produce.
 var validColors = map[string]map[string]string{
-      "Normal": {
-         "Black":   "\033[0;30m",
-         "Red":     "\033[0;31m",
-         "Green":   "\033[0;32m",
-         "Yellow":  "\033[0;33m",
-         "Blue":    "\033[0;34m",
-         "Magenta": "\033[0;35m",
-         "Cyan":    "\033[0;36m",
-         "White":   "\033[0;37m",
+      "normal": {
+         "black":   "\033[0;30m",
+         "red":     "\033[0;31m",
+         "green":   "\033[0;32m",
+         "yellow":  "\033[0;33m",
+         "blue":    "\033[0;34m",
+         "magenta": "\033[0;35m",
+         "cyan":    "\033[0;36m",
+         "white":   "\033[0;37m",
       },
-      "Bold": {
-         "Black":   "\033[1;30m",
-         "Red":     "\033[1;31m",
-         "Green":   "\033[1;32m",
-         "Yellow":  "\033[1;33m",
-         "Blue":    "\033[1;34m",
-         "Magenta": "\033[1;35m",
-         "Cyan":    "\033[1;36m",
-         "White":   "\033[1;37m",
+      "bold": {
+         "black":   "\033[1;30m",
+         "red":     "\033[1;31m",
+         "green":   "\033[1;32m",
+         "yellow":  "\033[1;33m",
+         "blue":    "\033[1;34m",
+         "magenta": "\033[1;35m",
+         "cyan":    "\033[1;36m",
+         "white":   "\033[1;37m",
       },
-      "HighIntensity": {
-         "Black":   "\033[0;90m",
-         "Red":     "\033[0;91m",
-         "Green":   "\033[0;92m",
-         "Yellow":  "\033[0;93m",
-         "Blue":    "\033[0;94m",
-         "Magenta": "\033[0;95m",
-         "Cyan":    "\033[0;96m",
-         "White":   "\033[0;97m",
+      "highIntensity": {
+         "black":   "\033[0;90m",
+         "red":     "\033[0;91m",
+         "green":   "\033[0;92m",
+         "yellow":  "\033[0;93m",
+         "blue":    "\033[0;94m",
+         "magenta": "\033[0;95m",
+         "cyan":    "\033[0;96m",
+         "white":   "\033[0;97m",
       },
-      "HighIntensity-Bold": {
-         "Black":   "\033[1;90m",
-         "Red":     "\033[1;91m",
-         "Green":   "\033[1;92m",
-         "Yellow":  "\033[1;93m",
-         "Blue":    "\033[1;94m",
-         "Magenta": "\033[1;95m",
-         "Cyan":    "\033[1;96m",
-         "White":   "\033[1;97m",
+      "highIntensity-Bold": {
+         "black":   "\033[1;90m",
+         "red":     "\033[1;91m",
+         "green":   "\033[1;92m",
+         "yellow":  "\033[1;93m",
+         "blue":    "\033[1;94m",
+         "magenta": "\033[1;95m",
+         "cyan":    "\033[1;96m",
+         "white":   "\033[1;97m",
       },
 }
 
@@ -54,9 +54,13 @@ var validColors = map[string]map[string]string{
 // Members:
 //	- Value: Stores the users inputted string to use in struct methods
 //  - chosenColor: Stores the chosen color in a variable to be called upon later when converting the color object to a string
-type color struct {
+type Color struct {
 	Value string // Stores the users inputted string
 	chosenColor string // Stores the users color for retrieval in later functions
+	bold bool
+	underline bool 
+	highIntensity bool
+	background bool
 }
 
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
@@ -68,117 +72,97 @@ var (
 	reset string = "\033[0m"
 )
 
-func Black(v any) *color {
-	var text color
-
-	text.chosenColor = "Black"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Black(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "black",
+	}
 }
 
-func Red(v any) *color {
-	var text color
-
-	text.chosenColor = "Red"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Red(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "red",
+	}
 }
 
-func Green(v any) *color {
-	var text color
-
-	text.chosenColor = "Green"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Green(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "green",
+	}
 }
 
-func Yellow(v any) *color {
-	var text color
-
-	text.chosenColor = "Yellow"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Yellow(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "yellow",
+	}
 }
 
-func Blue(v any) *color {
-	var text color 
-
-	text.chosenColor = "Blue"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Blue(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "blue",
+	}
 }
 
-func Magenta(v any) *color {
-	var text color 
-
-	text.chosenColor = "Magenta"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Magenta(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "magenta",
+	}
 }
 
-func Cyan(v any) *color {
-	var text color 
-
-	text.chosenColor = "Cyan"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func Cyan(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "cyan",
+	}
 }
 
-func White(v any) *color {
-	var text color 
-
-	text.chosenColor = "White"
-
-	text.Value = fmt.Sprint(v)
-
-	return &text
+func White(v any) *Color {
+	return &Color{
+		Value: fmt.Sprint(v),
+		chosenColor: "white",
+	}
 }
 
 // ToString converts the color object given by a color function to a string.
-func (c *color) ToString() string {
-	if color, ok := normalColors[c.chosenColor]; ok {
-		return color + c.Value + reset
+func (c *Color) String() string {
+	var escapeCode string
+
+	switch {
+	case c.bold && c.highIntensity:
+		escapeCode = highIntensityBold[c.chosenColor]
+
+	case c.bold:
+		escapeCode = boldColors[c.chosenColor]
+	
+	case c.highIntensity:
+		escapeCode = highIntensity[c.chosenColor]
+
+	default:
+		escapeCode = normalColors[c.chosenColor]
 	}
 
-	return c.Value
+	return escapeCode + c.Value + reset
 }
 
 // Sets the color bold member to true to apply bold to a given value.
-func (c *color) Bold() string {
-	if color, ok := boldColors[c.chosenColor]; ok {
-		return color + c.Value + reset
-	}
-
-	return c.Value
+func (c *Color) Bold() *Color {
+	c.bold = true
+	return c
 }
 
 // Sets the color highIntensity member to true to apply high intensity to a given value
-func (c *color) HighIntensity() string {
-	if color, ok := highIntensity[c.chosenColor]; ok {
-		return color + c.Value + reset
-	}
-
-	return c.Value
+func (c *Color) HighIntensity() *Color {
+	c.highIntensity = true
+	return c
 }
 
-func (c *color) HighIntensityBold() string {
-	if color, ok := highIntensityBold[c.chosenColor]; ok {
-		return color + c.Value + reset
-	}
-
-	return c.Value
+func (c *Color) HighIntensityBold() *Color {
+	c.highIntensity = true
+	c.bold = true
+	return c
 }
