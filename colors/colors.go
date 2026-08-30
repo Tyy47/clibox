@@ -1,4 +1,4 @@
-// Package colors for clibox includes a bunch of utilities to create colored strings and custom titles for your cli tool.
+// Package colors for clibox includes a set of color functions to print colored strings, methods to modify those string colors and a Color object for more advanced coloring.
 package colors
 
 import (
@@ -49,18 +49,23 @@ var validColors = map[string]map[string]string{
       },
 }
 
-// color is a private module object to store color related information to use when calling color functions.
+// Color is an object that stores all the needed data for a colored string and it's related modifying members.
 //
 // Members:
-//	- Value: Stores the users inputted string to use in struct methods
-//  - chosenColor: Stores the chosen color in a variable to be called upon later when converting the color object to a string
+// 	- Value: Stores the string that will be modified, can be called to retrieve non-colored string.
+//  - chosenColor: Stores the color chosen by the related color functions
+//  - bold: Stores the state of the Color object to determine if it will be bold
+//  - underline: Stores the state of the Color object to determine if the string will be underlined
+//  - highIntensity: Stores the highIntensity state 
+//  - background: Stores the background state
 type Color struct {
-	Value string // Stores the users inputted string
-	chosenColor string // Stores the users color for retrieval in later functions
-	bold bool
-	underline bool 
-	highIntensity bool
-	background bool
+	Value string // Stores the non-colored string to be called upon later
+	chosenColor string // Stores the called color
+	backgroundColor string // Stores the called background color
+	bold bool // Stores the state for bold
+	underline bool // Stores the state for underline
+	highIntensity bool // Stores the state for highIntensity
+	background bool // Stores the state for background
 }
 
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
@@ -72,6 +77,8 @@ var (
 	reset string = "\033[0m"
 )
 
+// Black takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Black with no methods prints the value in black.
 func Black(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -79,6 +86,8 @@ func Black(v any) *Color {
 	}
 }
 
+// Red takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Red with no methods prints the value in red.
 func Red(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -86,6 +95,8 @@ func Red(v any) *Color {
 	}
 }
 
+// Green takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Green with no methods prints the value in green.
 func Green(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -93,6 +104,8 @@ func Green(v any) *Color {
 	}
 }
 
+// Yellow takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Yellow with no methods prints the value in yellow.
 func Yellow(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -100,6 +113,8 @@ func Yellow(v any) *Color {
 	}
 }
 
+// Blue takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Blue with no methods prints the value in blue.
 func Blue(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -107,6 +122,8 @@ func Blue(v any) *Color {
 	}
 }
 
+// Magenta takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Magenta with no methods prints the value in magenta.
 func Magenta(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -114,6 +131,8 @@ func Magenta(v any) *Color {
 	}
 }
 
+// Cyan takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling Cyan with no methods prints the value in cyan.
 func Cyan(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -121,6 +140,8 @@ func Cyan(v any) *Color {
 	}
 }
 
+// White takes in any value, converts the any value into a string and returns a pointer to a Color object.
+// Calling White with no methods prints the value in white.
 func White(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
@@ -128,6 +149,7 @@ func White(v any) *Color {
 	}
 }
 
+// String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string.
 func (c *Color) String() string {
 	var escapeCode string
 
@@ -148,18 +170,19 @@ func (c *Color) String() string {
 	return escapeCode + c.Value + reset
 }
 
-// Sets the color bold member to true to apply bold to a given value.
+// Bold toggles the Color bold member to true. When called, a color function will print in bold.
 func (c *Color) Bold() *Color {
 	c.bold = true
 	return c
 }
 
-// Sets the color highIntensity member to true to apply high intensity to a given value
+// HighIntensity toggles the Color highIntensity member to true. When called, a color function will print with high intensity.
 func (c *Color) HighIntensity() *Color {
 	c.highIntensity = true
 	return c
 }
 
+// HighIntensityBold toggles both the Color highIntensity and bold members to true. When called, a color function will print with high intensity and in bold.
 func (c *Color) HighIntensityBold() *Color {
 	c.highIntensity = true
 	c.bold = true
