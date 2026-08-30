@@ -1,4 +1,4 @@
-// Package colors for clibox includes a set of color functions to print colored strings, methods to modify those string colors and a Color object for more advanced coloring.
+// Package colors for clibox includes a set of color functions to print colored strings, methods to modify those string colors and a Color object for more advanced coloring and reusability.
 package colors
 
 import (
@@ -161,7 +161,7 @@ func White(v any) *Color {
 func (c *Color) String() string {
 	var escapeCode = make([]string, 0, 6)
 
-	foreground, ok := ansiForegroundCodes[c.ChosenColor.String()]
+	foreground, ok := ansiForegroundCodes[utils.StringConverter(c.ChosenColor)]
 
 	if !ok {
 		return utils.StringConverter(c.Value)
@@ -190,7 +190,7 @@ func (c *Color) String() string {
 	}
 
 	if c.Background {
-		if background, ok := ansiBackgroundCodes[c.BackgroundColor.String()]; ok {
+		if background, ok := ansiBackgroundCodes[utils.StringConverter(c.BackgroundColor)]; ok {
 			if c.HighIntensityBackground {
 				escapeCode = append(escapeCode, background[1])
 			} else {
@@ -281,6 +281,3 @@ func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Col
 	return c
 }
 
-func (v validColor) String() string {
-	return string(v)
-}
