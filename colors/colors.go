@@ -4,6 +4,8 @@ package colors
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Tyy47/clibox/internal/utils"
 )
 
 // ansiForegroundCodes stores stringed codes of each available ansi foreground color
@@ -49,7 +51,7 @@ var ansiModifierCodes = map[string]string{
 //  - highIntensity: Stores the highIntensity state 
 //  - background: Stores the background state
 type Color struct {
-	Value string // Stores the non-colored string to be called upon later
+	Value any // Stores the non-colored string to be called upon later
 	ChosenColor validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
 	BackgroundColor validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
 	Bold bool // Stores the state for bold.
@@ -155,7 +157,7 @@ func (c *Color) String() string {
 	foreground, ok := ansiForegroundCodes[c.ChosenColor.String()]
 
 	if !ok {
-		return c.Value
+		return utils.StringConverter(c.Value)
 	}
 	
 	if c.Bold {
@@ -192,7 +194,7 @@ func (c *Color) String() string {
 
 	var builder strings.Builder
 
-	builder.Grow(len(c.Value) + len(ansiModifierCodes["reset"]) + 16)
+	builder.Grow(len(utils.StringConverter(c.Value)) + len(ansiModifierCodes["reset"]) + 16)
 
 	builder.WriteString("\033[")
 
@@ -206,7 +208,7 @@ func (c *Color) String() string {
 	}
 
 	builder.WriteByte('m')
-	builder.WriteString(c.Value)
+	builder.WriteString(utils.StringConverter(c.Value))
 	builder.WriteString(ansiModifierCodes["reset"])
 
 	return builder.String()
