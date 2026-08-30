@@ -47,6 +47,26 @@ var validColors = map[string]map[string]string{
          "cyan":    "\033[1;96m",
          "white":   "\033[1;97m",
       },
+	  "backgrounds": {
+         "black":   "\033[1;40m",
+         "red":     "\033[1;41m",
+         "green":   "\033[1;42m",
+         "yellow":  "\033[1;43m",
+         "blue":    "\033[1;44m",
+         "magenta": "\033[1;45m",
+         "cyan":    "\033[1;46m",
+         "white":   "\033[1;47m",
+	  },
+	  "backgrounds-highIntensity": {
+         "black":   "\033[0;100m",
+         "red":     "\033[0;101m",
+         "green":   "\033[0;102m",
+         "yellow":  "\033[0;103m",
+         "blue":    "\033[0;104m",
+         "magenta": "\033[0;105m",
+         "cyan":    "\033[0;106m",
+         "white":   "\033[0;107m",
+	  },
 }
 
 // Color is an object that stores all the needed data for a colored string and it's related modifying members.
@@ -64,8 +84,11 @@ type Color struct {
 	BackgroundColor string // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
 	Bold bool // Stores the state for bold.
 	Underline bool // Stores the state for underline.
+	Strikethrough bool // Stores the state for strikethrough.
+	Italic bool // Stores the state for italic.
 	HighIntensity bool // Stores the state for highIntensity.
 	Background bool // Stores the state for background.
+	HighIntensityBackground bool // Stores the state for a high intensity background.
 }
 
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
@@ -74,6 +97,11 @@ var (
 	boldColors = validColors["bold"]
 	highIntensity = validColors["highIntensity"]
 	highIntensityBold = validColors["highIntensity-Bold"]
+	backgroundColors = validColors["backgrounds"]
+	highIntensityBackgrounds = validColors["backgrounds-highIntensity"]
+	italic string = "\033[3m"
+	boldItalic string = italic + "\033[1m"
+	strikethrough string = "\033[9m"
 	reset string = "\033[0m"
 )
 
@@ -149,7 +177,7 @@ func White(v any) *Color {
 	}
 }
 
-// String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string.
+// String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
 	var escapeCode string
 
@@ -170,21 +198,39 @@ func (c *Color) String() string {
 	return escapeCode + c.Value + reset
 }
 
-// Bold toggles the Color bold member to true. When called, a color function will print in bold.
+// ToBold toggles the Color bold member to true. When called, a color function will print in bold.
 func (c *Color) ToBold() *Color {
 	c.Bold = true
 	return c
 }
 
-// HighIntensity toggles the Color highIntensity member to true. When called, a color function will print with high intensity.
+// ToHighIntensity toggles the Color highIntensity member to true. When called, a color function will print with high intensity.
 func (c *Color) ToHighIntensity() *Color {
 	c.HighIntensity = true
 	return c
 }
 
-// HighIntensityBold toggles both the Color highIntensity and bold members to true. When called, a color function will print with high intensity and in bold.
+// ToHighIntensityBold toggles both the Color highIntensity and bold members to true. When called, a color function will print with high intensity and in bold.
 func (c *Color) ToHighIntensityBold() *Color {
 	c.HighIntensity = true
 	c.Bold = true
+	return c
+}
+
+// ToUnderline toggles the Color underline member to true. When called, a color function will print with an underline.
+func (c *Color) ToUnderline() *Color {
+	c.Underline = true
+	return c
+}
+
+// ToItalic toggles the Color italic member to true. When called, a color function will print with an italic style.
+func (c *Color) ToItalic() *Color {
+	c.Italic = true
+	return c
+}
+
+// ToStrikethrough toggles the Color strikethrough member to true. When called, a color function will print with a strikethrough.
+func (c *Color) ToStrikethrough() *Color {
+	c.Strikethrough = true
 	return c
 }
