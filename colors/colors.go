@@ -3,70 +3,40 @@ package colors
 
 import (
 	"fmt"
+	"strings"
 )
 
-// validColors holds a collection of all valid possible colors the terminal can produce.
-var validColors = map[string]map[string]string{
-      "normal": {
-         "black":   "\033[0;30m",
-         "red":     "\033[0;31m",
-         "green":   "\033[0;32m",
-         "yellow":  "\033[0;33m",
-         "blue":    "\033[0;34m",
-         "magenta": "\033[0;35m",
-         "cyan":    "\033[0;36m",
-         "white":   "\033[0;37m",
-      },
-      "bold": {
-         "black":   "\033[1;30m",
-         "red":     "\033[1;31m",
-         "green":   "\033[1;32m",
-         "yellow":  "\033[1;33m",
-         "blue":    "\033[1;34m",
-         "magenta": "\033[1;35m",
-         "cyan":    "\033[1;36m",
-         "white":   "\033[1;37m",
-      },
-      "highIntensity": {
-         "black":   "\033[0;90m",
-         "red":     "\033[0;91m",
-         "green":   "\033[0;92m",
-         "yellow":  "\033[0;93m",
-         "blue":    "\033[0;94m",
-         "magenta": "\033[0;95m",
-         "cyan":    "\033[0;96m",
-         "white":   "\033[0;97m",
-      },
-      "highIntensity-Bold": {
-         "black":   "\033[1;90m",
-         "red":     "\033[1;91m",
-         "green":   "\033[1;92m",
-         "yellow":  "\033[1;93m",
-         "blue":    "\033[1;94m",
-         "magenta": "\033[1;95m",
-         "cyan":    "\033[1;96m",
-         "white":   "\033[1;97m",
-      },
-	  "backgrounds": {
-         "black":   "\033[1;40m",
-         "red":     "\033[1;41m",
-         "green":   "\033[1;42m",
-         "yellow":  "\033[1;43m",
-         "blue":    "\033[1;44m",
-         "magenta": "\033[1;45m",
-         "cyan":    "\033[1;46m",
-         "white":   "\033[1;47m",
-	  },
-	  "backgrounds-highIntensity": {
-         "black":   "\033[0;100m",
-         "red":     "\033[0;101m",
-         "green":   "\033[0;102m",
-         "yellow":  "\033[0;103m",
-         "blue":    "\033[0;104m",
-         "magenta": "\033[0;105m",
-         "cyan":    "\033[0;106m",
-         "white":   "\033[0;107m",
-	  },
+// ansiForegroundCodes stores stringed codes of each available ansi foreground color
+var ansiForegroundCodes = map[string][2]string{
+	"black": {"30", "90"},
+	"red": {"31", "91"},
+	"green": {"32", "92"},
+	"yellow": {"33", "93"},
+	"blue": {"34", "94"},
+	"magenta": {"35", "95"},
+	"cyan": {"36", "96"},
+	"white": {"37", "97"},
+}
+
+// ansiBackgroundCodes stores stringed codes of each available ansi background color
+var ansiBackgroundCodes = map[string][2]string{
+	"black": {"40", "100"},
+	"red": {"41", "101"},
+	"green": {"42", "102"},
+	"yellow": {"43", "103"},
+	"blue": {"44", "104"},
+	"magenta": {"45", "105"},
+	"cyan": {"46", "106"},
+	"white": {"47", "107"},
+}
+
+// ansiModifierCodes stores all of the modifying ansi codes: ["italic", "strikethrough", "reset"]
+var ansiModifierCodes = map[string]string{
+	"bold": "1",
+	"italic": "3",
+	"underline": "4",
+	"strikethrough": "9",
+	"reset": "\033[0m",
 }
 
 // Color is an object that stores all the needed data for a colored string and it's related modifying members.
@@ -93,20 +63,6 @@ type Color struct {
 
 // validColor is a private type to allow the selection of a color when selecting background colors when calling Background
 type validColor string
-
-// Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
-var (
-	normalColors = validColors["normal"]
-	boldColors = validColors["bold"]
-	highIntensity = validColors["highIntensity"]
-	highIntensityBold = validColors["highIntensity-Bold"]
-	backgroundColors = validColors["backgrounds"]
-	highIntensityBackgrounds = validColors["backgrounds-highIntensity"]
-	italic string = "\033[3m"
-	boldItalic string = italic + "\033[1m"
-	strikethrough string = "\033[9m"
-	reset string = "\033[0m"
-)
 
 // Valid color to be passed into Background to apply a colored background to a Color object.
 var (
@@ -193,12 +149,67 @@ func White(v any) *Color {
 
 // String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
-	var escapeCode string = "\033["
+	var escapeCode = make([]string, 0, 6)
 	
+	foreground, ok := ansiForegroundCodes[c.ChosenColor]
+
+	if !ok {
+		return c.Value
+	}
 	
+	if c.Bold {
+		escapeCode = append(escapeCode, ansiModifierCodes["bold"])
+	}
+
+	if c.Italic {
+		escapeCode = append(escapeCode, ansiModifierCodes["italic"])
+	}
+
+	if c.Underline {
+		escapeCode = append(escapeCode, ansiModifierCodes["underline"])
+	}
+
+	if c.Strikethrough {
+		escapeCode = append(escapeCode,  ansiModifierCodes["strikethrough"])
+	}
+
+	if c.HighIntensity {
+		escapeCode = append(escapeCode, foreground[1])
+	} else {
+		escapeCode = append(escapeCode, foreground[0])
+	}
+
+	if c.Background {
+		if background, ok := ansiBackgroundCodes[c.BackgroundColor]; ok {
+			if c.HighIntensityBackground {
+				escapeCode = append(escapeCode, background[1])
+			} else {
+				escapeCode = append(escapeCode, background[0])
+			}
+		}
+	}
+
+	var builder strings.Builder
+
+	builder.Grow(len(c.Value) + len(ansiModifierCodes["reset"]) + 16)
+
+	builder.WriteString("\033[")
 
 
-	return escapeCode + c.Value + reset
+	for i, code := range escapeCode {
+		if i > 0 {
+			builder.WriteByte(';')
+		}
+
+		builder.WriteString(code)
+	}
+
+	builder.WriteByte('m')
+	builder.WriteString(c.Value)
+	builder.WriteString(ansiModifierCodes["reset"])
+
+	return builder.String()
+
 }
 
 // ToBold toggles the Color bold member to true. When called, a color function will print in bold.
