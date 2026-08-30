@@ -9,57 +9,57 @@ import (
 
 // ansiForegroundCodes stores stringed codes of each available ansi foreground color
 var ansiForegroundCodes = map[string][2]string{
-	"black": {"30", "90"},
-	"red": {"31", "91"},
-	"green": {"32", "92"},
-	"yellow": {"33", "93"},
-	"blue": {"34", "94"},
+	"black":   {"30", "90"},
+	"red":     {"31", "91"},
+	"green":   {"32", "92"},
+	"yellow":  {"33", "93"},
+	"blue":    {"34", "94"},
 	"magenta": {"35", "95"},
-	"cyan": {"36", "96"},
-	"white": {"37", "97"},
+	"cyan":    {"36", "96"},
+	"white":   {"37", "97"},
 }
 
 // ansiBackgroundCodes stores stringed codes of each available ansi background color
 var ansiBackgroundCodes = map[string][2]string{
-	"black": {"40", "100"},
-	"red": {"41", "101"},
-	"green": {"42", "102"},
-	"yellow": {"43", "103"},
-	"blue": {"44", "104"},
+	"black":   {"40", "100"},
+	"red":     {"41", "101"},
+	"green":   {"42", "102"},
+	"yellow":  {"43", "103"},
+	"blue":    {"44", "104"},
 	"magenta": {"45", "105"},
-	"cyan": {"46", "106"},
-	"white": {"47", "107"},
+	"cyan":    {"46", "106"},
+	"white":   {"47", "107"},
 }
 
 // ansiModifierCodes stores all of the modifying ansi codes: ["italic", "strikethrough", "reset"]
 var ansiModifierCodes = map[string]string{
-	"bold": "1",
-	"italic": "3",
-	"underline": "4",
+	"bold":          "1",
+	"italic":        "3",
+	"underline":     "4",
 	"strikethrough": "9",
-	"reset": "\033[0m",
+	"reset":         "\033[0m",
 }
 
 // Color is an object that stores all the needed data for a colored string and it's related modifying members.
 //
 // Members:
-// 	- Value: Stores the string that will be modified, can be called to retrieve non-colored string.
-//  - ChosenColor: Stores the color chosen by the related color functions
-//  - Bold: Stores the state of the Color object to determine if it will be bold
-//  - Underline: Stores the state of the Color object to determine if the string will be underlined
-//  - HighIntensity: Stores the highIntensity state 
-//  - Background: Stores the background state
+//   - Value: Stores the string that will be modified, can be called to retrieve non-colored string.
+//   - ChosenColor: Stores the color chosen by the related color functions
+//   - Bold: Stores the state of the Color object to determine if it will be bold
+//   - Underline: Stores the state of the Color object to determine if the string will be underlined
+//   - HighIntensity: Stores the highIntensity state
+//   - Background: Stores the background state
 type Color struct {
-	Value any // Stores the non-colored string to be called upon later
-	ChosenColor validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
-	BackgroundColor validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
-	Bold bool // Stores the state for bold.
-	Underline bool // Stores the state for underline.
-	Strikethrough bool // Stores the state for strikethrough.
-	Italic bool // Stores the state for italic.
-	HighIntensity bool // Stores the state for highIntensity.
-	Background bool // Stores the state for background.
-	HighIntensityBackground bool // Stores the state for a high intensity background.
+	Value                   any        // Stores the non-colored string to be called upon later
+	ChosenColor             validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
+	BackgroundColor         validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
+	Bold                    bool       // Stores the state for bold.
+	Underline               bool       // Stores the state for underline.
+	Strikethrough           bool       // Stores the state for strikethrough.
+	Italic                  bool       // Stores the state for italic.
+	HighIntensity           bool       // Stores the state for highIntensity.
+	Background              bool       // Stores the state for background.
+	HighIntensityBackground bool       // Stores the state for a high intensity background.
 }
 
 // validColor is a private type to restrict colors only supported by this package
@@ -89,7 +89,7 @@ const (
 // Calling Black with no methods prints the value in black.
 func Black(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorBlack,
 	}
 }
@@ -98,7 +98,7 @@ func Black(v any) *Color {
 // Calling Red with no methods prints the value in red.
 func Red(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorRed,
 	}
 }
@@ -107,7 +107,7 @@ func Red(v any) *Color {
 // Calling Green with no methods prints the value in green.
 func Green(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorGreen,
 	}
 }
@@ -116,7 +116,7 @@ func Green(v any) *Color {
 // Calling Yellow with no methods prints the value in yellow.
 func Yellow(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorYellow,
 	}
 }
@@ -125,7 +125,7 @@ func Yellow(v any) *Color {
 // Calling Blue with no methods prints the value in blue.
 func Blue(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorBlue,
 	}
 }
@@ -134,7 +134,7 @@ func Blue(v any) *Color {
 // Calling Magenta with no methods prints the value in magenta.
 func Magenta(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorMagenta,
 	}
 }
@@ -143,7 +143,7 @@ func Magenta(v any) *Color {
 // Calling Cyan with no methods prints the value in cyan.
 func Cyan(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorCyan,
 	}
 }
@@ -152,7 +152,7 @@ func Cyan(v any) *Color {
 // Calling White with no methods prints the value in white.
 func White(v any) *Color {
 	return &Color{
-		Value: utils.StringConverter(v),
+		Value:       utils.StringConverter(v),
 		ChosenColor: ColorWhite,
 	}
 }
@@ -160,13 +160,13 @@ func White(v any) *Color {
 // String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
 	var escapeCode = make([]string, 0, 6)
-	
+
 	foreground, ok := ansiForegroundCodes[c.ChosenColor.String()]
 
 	if !ok {
 		return utils.StringConverter(c.Value)
 	}
-	
+
 	if c.Bold {
 		escapeCode = append(escapeCode, ansiModifierCodes["bold"])
 	}
@@ -180,7 +180,7 @@ func (c *Color) String() string {
 	}
 
 	if c.Strikethrough {
-		escapeCode = append(escapeCode,  ansiModifierCodes["strikethrough"])
+		escapeCode = append(escapeCode, ansiModifierCodes["strikethrough"])
 	}
 
 	if c.HighIntensity {
@@ -204,7 +204,6 @@ func (c *Color) String() string {
 	builder.Grow(len(utils.StringConverter(c.Value)) + len(ansiModifierCodes["reset"]) + 16)
 
 	builder.WriteString("\033[")
-
 
 	for i, code := range escapeCode {
 		if i > 0 {
@@ -277,14 +276,11 @@ func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Col
 
 	c.Background = true
 	c.BackgroundColor = colorOption
+	c.HighIntensityBackground = highIntensity
 
-	if highIntensity {
-		c.HighIntensityBackground = true
-	}
-	
 	return c
 }
 
-func (v *validColor) String() string {
-	return v.String()
+func (v validColor) String() string {
+	return string(v)
 }

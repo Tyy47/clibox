@@ -12,21 +12,19 @@ func StringConverter(v any) string {
 		return ""
 	}
 
-
-	input := reflect.TypeOf(v)
-
+	input := reflect.ValueOf(v)
 
 	switch input.Kind() {
 	case reflect.String:
-		return v.(string)
+		return input.String()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.Itoa(v.(int))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return strconv.FormatUint(reflect.ValueOf(v).Uint(), 10)
+		return strconv.FormatInt(input.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return strconv.FormatUint(input.Uint(), 10)
 	case reflect.Float32, reflect.Float64:
-		return strconv.FormatFloat(reflect.ValueOf(v).Float(), 'g', -1, 64)
+		return strconv.FormatFloat(input.Float(), 'g', -1, input.Type().Bits())
 	case reflect.Bool:
-		return strconv.FormatBool(v.(bool))
+		return strconv.FormatBool(input.Bool())
 	default:
 		return fmt.Sprint(v)
 	}
