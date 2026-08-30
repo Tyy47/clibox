@@ -60,12 +60,12 @@ var validColors = map[string]map[string]string{
 //  - background: Stores the background state
 type Color struct {
 	Value string // Stores the non-colored string to be called upon later
-	chosenColor string // Stores the called color
-	backgroundColor string // Stores the called background color
-	bold bool // Stores the state for bold
-	underline bool // Stores the state for underline
-	highIntensity bool // Stores the state for highIntensity
-	background bool // Stores the state for background
+	ChosenColor string // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
+	BackgroundColor string // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
+	Bold bool // Stores the state for bold.
+	Underline bool // Stores the state for underline.
+	HighIntensity bool // Stores the state for highIntensity.
+	Background bool // Stores the state for background.
 }
 
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
@@ -82,7 +82,7 @@ var (
 func Black(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "black",
+		ChosenColor: "black",
 	}
 }
 
@@ -91,7 +91,7 @@ func Black(v any) *Color {
 func Red(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "red",
+		ChosenColor: "red",
 	}
 }
 
@@ -100,7 +100,7 @@ func Red(v any) *Color {
 func Green(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "green",
+		ChosenColor: "green",
 	}
 }
 
@@ -109,7 +109,7 @@ func Green(v any) *Color {
 func Yellow(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "yellow",
+		ChosenColor: "yellow",
 	}
 }
 
@@ -118,7 +118,7 @@ func Yellow(v any) *Color {
 func Blue(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "blue",
+		ChosenColor: "blue",
 	}
 }
 
@@ -127,7 +127,7 @@ func Blue(v any) *Color {
 func Magenta(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "magenta",
+		ChosenColor: "magenta",
 	}
 }
 
@@ -136,7 +136,7 @@ func Magenta(v any) *Color {
 func Cyan(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "cyan",
+		ChosenColor: "cyan",
 	}
 }
 
@@ -145,7 +145,7 @@ func Cyan(v any) *Color {
 func White(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		chosenColor: "white",
+		ChosenColor: "white",
 	}
 }
 
@@ -154,37 +154,37 @@ func (c *Color) String() string {
 	var escapeCode string
 
 	switch {
-	case c.bold && c.highIntensity:
-		escapeCode = highIntensityBold[c.chosenColor]
+	case c.Bold && c.HighIntensity:
+		escapeCode = highIntensityBold[c.ChosenColor]
 
-	case c.bold:
-		escapeCode = boldColors[c.chosenColor]
+	case c.Bold:
+		escapeCode = boldColors[c.ChosenColor]
 	
-	case c.highIntensity:
-		escapeCode = highIntensity[c.chosenColor]
+	case c.HighIntensity:
+		escapeCode = highIntensity[c.ChosenColor]
 
 	default:
-		escapeCode = normalColors[c.chosenColor]
+		escapeCode = normalColors[c.ChosenColor]
 	}
 
 	return escapeCode + c.Value + reset
 }
 
 // Bold toggles the Color bold member to true. When called, a color function will print in bold.
-func (c *Color) Bold() *Color {
-	c.bold = true
+func (c *Color) ToBold() *Color {
+	c.Bold = true
 	return c
 }
 
 // HighIntensity toggles the Color highIntensity member to true. When called, a color function will print with high intensity.
-func (c *Color) HighIntensity() *Color {
-	c.highIntensity = true
+func (c *Color) ToHighIntensity() *Color {
+	c.HighIntensity = true
 	return c
 }
 
 // HighIntensityBold toggles both the Color highIntensity and bold members to true. When called, a color function will print with high intensity and in bold.
-func (c *Color) HighIntensityBold() *Color {
-	c.highIntensity = true
-	c.bold = true
+func (c *Color) ToHighIntensityBold() *Color {
+	c.HighIntensity = true
+	c.Bold = true
 	return c
 }
