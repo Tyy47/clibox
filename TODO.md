@@ -3,4 +3,4 @@
 
 
 ## colors
-- Add detailed code documentation.
+- Add in function documentation for each function.
