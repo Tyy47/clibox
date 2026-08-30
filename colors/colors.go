@@ -2,7 +2,6 @@
 package colors
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/Tyy47/clibox/internal/utils"
@@ -45,11 +44,11 @@ var ansiModifierCodes = map[string]string{
 //
 // Members:
 // 	- Value: Stores the string that will be modified, can be called to retrieve non-colored string.
-//  - chosenColor: Stores the color chosen by the related color functions
-//  - bold: Stores the state of the Color object to determine if it will be bold
-//  - underline: Stores the state of the Color object to determine if the string will be underlined
-//  - highIntensity: Stores the highIntensity state 
-//  - background: Stores the background state
+//  - ChosenColor: Stores the color chosen by the related color functions
+//  - Bold: Stores the state of the Color object to determine if it will be bold
+//  - Underline: Stores the state of the Color object to determine if the string will be underlined
+//  - HighIntensity: Stores the highIntensity state 
+//  - Background: Stores the background state
 type Color struct {
 	Value any // Stores the non-colored string to be called upon later
 	ChosenColor validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
@@ -63,18 +62,26 @@ type Color struct {
 	HighIntensityBackground bool // Stores the state for a high intensity background.
 }
 
-// validColor is a private type to allow the selection of a color when selecting background colors when calling Background
+// validColor is a private type to restrict colors only supported by this package
 type validColor string
 
-// Valid color to be passed into Background to apply a colored background to a Color object.
-var (
+// Color constants to identify valid colors for this package
+const (
+	// ColorBlack identifies as black
 	ColorBlack validColor = "black"
+	// ColorRed identifies as red
 	ColorRed validColor = "red"
+	// ColorGreen identifies as green
 	ColorGreen validColor = "green"
+	// ColorYellow identifies as yellow
 	ColorYellow validColor = "yellow"
+	// ColorBlue identifies as blue
 	ColorBlue validColor = "blue"
+	// ColorMagenta identifies as magenta
 	ColorMagenta validColor = "magenta"
+	// ColorCyan identifies as cyan
 	ColorCyan validColor = "cyan"
+	// ColorWhite identifies as white
 	ColorWhite validColor = "white"
 )
 
@@ -82,7 +89,7 @@ var (
 // Calling Black with no methods prints the value in black.
 func Black(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorBlack,
 	}
 }
@@ -91,7 +98,7 @@ func Black(v any) *Color {
 // Calling Red with no methods prints the value in red.
 func Red(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorRed,
 	}
 }
@@ -100,7 +107,7 @@ func Red(v any) *Color {
 // Calling Green with no methods prints the value in green.
 func Green(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorGreen,
 	}
 }
@@ -109,7 +116,7 @@ func Green(v any) *Color {
 // Calling Yellow with no methods prints the value in yellow.
 func Yellow(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorYellow,
 	}
 }
@@ -118,7 +125,7 @@ func Yellow(v any) *Color {
 // Calling Blue with no methods prints the value in blue.
 func Blue(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorBlue,
 	}
 }
@@ -127,7 +134,7 @@ func Blue(v any) *Color {
 // Calling Magenta with no methods prints the value in magenta.
 func Magenta(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorMagenta,
 	}
 }
@@ -136,7 +143,7 @@ func Magenta(v any) *Color {
 // Calling Cyan with no methods prints the value in cyan.
 func Cyan(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorCyan,
 	}
 }
@@ -145,7 +152,7 @@ func Cyan(v any) *Color {
 // Calling White with no methods prints the value in white.
 func White(v any) *Color {
 	return &Color{
-		Value: fmt.Sprint(v),
+		Value: utils.StringConverter(v),
 		ChosenColor: ColorWhite,
 	}
 }
