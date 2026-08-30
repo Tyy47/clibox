@@ -44,22 +44,22 @@ var ansiModifierCodes = map[string]string{
 //
 // Members:
 //   - Value: Stores the string that will be modified, can be called to retrieve non-colored string.
-//   - ChosenColor: Stores the color chosen by the related color functions
-//   - Bold: Stores the state of the Color object to determine if it will be bold
-//   - Underline: Stores the state of the Color object to determine if the string will be underlined
-//   - HighIntensity: Stores the highIntensity state
-//   - Background: Stores the background state
+//   - ChosenColor: Stores a validColor for the coloring of the string.
+//   - Bold: Stores the Bold state. 
+//   - Underline: Stores the underline state.
+//   - HighIntensity: Stores the highIntensity state.
+//   - Background: Stores the background state.
 type Color struct {
 	Value                   any        // Stores the non-colored string to be called upon later
 	ChosenColor             validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
 	BackgroundColor         validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
-	Bold                    bool       // Stores the state for bold.
-	Underline               bool       // Stores the state for underline.
-	Strikethrough           bool       // Stores the state for strikethrough.
-	Italic                  bool       // Stores the state for italic.
-	HighIntensity           bool       // Stores the state for highIntensity.
-	Background              bool       // Stores the state for background.
-	HighIntensityBackground bool       // Stores the state for a high intensity background.
+	Bold                    bool       // Stores the state for bold. Toggling to true will turn the text bold.
+	Underline               bool       // Stores the state for underline. Toggling to true will make the text underlined.
+	Strikethrough           bool       // Stores the state for strikethrough. Toggling to true will make the text have a strikethrough.
+	Italic                  bool       // Stores the state for italic. Toggling to true will cause the text to be italized.
+	HighIntensity           bool       // Stores the state for highIntensity. Toggling to true will cause the text to have high intensity colors.
+	Background              bool       // Stores the state for background. Toggling to true will enable the text to have a background.
+	HighIntensityBackground bool       // Stores the state for a high intensity background. Toggling to true will enable the text to have a high intensity background. *Disclaimer: HighIntensityBackground takes precedent over Background if both are toggled to true.
 }
 
 // validColor is a private type to restrict colors only supported by this package
@@ -189,7 +189,7 @@ func (c *Color) String() string {
 		escapeCode = append(escapeCode, foreground[0])
 	}
 
-	if c.Background {
+	if c.Background || c.HighIntensityBackground {
 		if background, ok := ansiBackgroundCodes[utils.StringConverter(c.BackgroundColor)]; ok {
 			if c.HighIntensityBackground {
 				escapeCode = append(escapeCode, background[1])
