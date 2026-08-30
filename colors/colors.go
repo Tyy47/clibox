@@ -50,8 +50,8 @@ var ansiModifierCodes = map[string]string{
 //  - background: Stores the background state
 type Color struct {
 	Value string // Stores the non-colored string to be called upon later
-	ChosenColor string // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
-	BackgroundColor string // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
+	ChosenColor validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
+	BackgroundColor validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
 	Bold bool // Stores the state for bold.
 	Underline bool // Stores the state for underline.
 	Strikethrough bool // Stores the state for strikethrough.
@@ -69,6 +69,7 @@ var (
 	ColorBlack validColor = "black"
 	ColorRed validColor = "red"
 	ColorGreen validColor = "green"
+	ColorYellow validColor = "yellow"
 	ColorBlue validColor = "blue"
 	ColorMagenta validColor = "magenta"
 	ColorCyan validColor = "cyan"
@@ -80,7 +81,7 @@ var (
 func Black(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "black",
+		ChosenColor: ColorBlack,
 	}
 }
 
@@ -89,7 +90,7 @@ func Black(v any) *Color {
 func Red(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "red",
+		ChosenColor: ColorRed,
 	}
 }
 
@@ -98,7 +99,7 @@ func Red(v any) *Color {
 func Green(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "green",
+		ChosenColor: ColorGreen,
 	}
 }
 
@@ -107,7 +108,7 @@ func Green(v any) *Color {
 func Yellow(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "yellow",
+		ChosenColor: ColorYellow,
 	}
 }
 
@@ -116,7 +117,7 @@ func Yellow(v any) *Color {
 func Blue(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "blue",
+		ChosenColor: ColorBlue,
 	}
 }
 
@@ -125,7 +126,7 @@ func Blue(v any) *Color {
 func Magenta(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "magenta",
+		ChosenColor: ColorMagenta,
 	}
 }
 
@@ -134,7 +135,7 @@ func Magenta(v any) *Color {
 func Cyan(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "cyan",
+		ChosenColor: ColorCyan,
 	}
 }
 
@@ -143,7 +144,7 @@ func Cyan(v any) *Color {
 func White(v any) *Color {
 	return &Color{
 		Value: fmt.Sprint(v),
-		ChosenColor: "white",
+		ChosenColor: ColorWhite,
 	}
 }
 
@@ -151,7 +152,7 @@ func White(v any) *Color {
 func (c *Color) String() string {
 	var escapeCode = make([]string, 0, 6)
 	
-	foreground, ok := ansiForegroundCodes[c.ChosenColor]
+	foreground, ok := ansiForegroundCodes[c.ChosenColor.String()]
 
 	if !ok {
 		return c.Value
@@ -180,7 +181,7 @@ func (c *Color) String() string {
 	}
 
 	if c.Background {
-		if background, ok := ansiBackgroundCodes[c.BackgroundColor]; ok {
+		if background, ok := ansiBackgroundCodes[c.BackgroundColor.String()]; ok {
 			if c.HighIntensityBackground {
 				escapeCode = append(escapeCode, background[1])
 			} else {
@@ -266,11 +267,15 @@ func (c *Color) ToStrikethrough() *Color {
 func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Color {
 
 	c.Background = true
-	c.BackgroundColor = string(colorOption)
+	c.BackgroundColor = colorOption
 
 	if highIntensity {
 		c.HighIntensityBackground = true
 	}
 	
 	return c
+}
+
+func (v *validColor) String() string {
+	return v.String()
 }
