@@ -51,7 +51,7 @@ var ansiModifierCodes = map[string]string{
 type Color struct {
 	Value string // Stores the non-colored string to be called upon later
 	ChosenColor string // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
-	BackgroundColor string // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
+	BackgroundColor string // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
 	Bold bool // Stores the state for bold.
 	Underline bool // Stores the state for underline.
 	Strikethrough bool // Stores the state for strikethrough.
