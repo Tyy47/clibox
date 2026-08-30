@@ -91,6 +91,9 @@ type Color struct {
 	HighIntensityBackground bool // Stores the state for a high intensity background.
 }
 
+// validColor is a private type to allow the selection of a color when selecting background colors when calling Background
+type validColor string
+
 // Variable array storing "checkpoints" of all the colors and their options in a nested list and the reset code.
 var (
 	normalColors = validColors["normal"]
@@ -103,6 +106,17 @@ var (
 	boldItalic string = italic + "\033[1m"
 	strikethrough string = "\033[9m"
 	reset string = "\033[0m"
+)
+
+// Valid color to be passed into Background to apply a colored background to a Color object.
+var (
+	ColorBlack validColor = "black"
+	ColorRed validColor = "red"
+	ColorGreen validColor = "green"
+	ColorBlue validColor = "blue"
+	ColorMagenta validColor = "magenta"
+	ColorCyan validColor = "cyan"
+	ColorWhite validColor = "white"
 )
 
 // Black takes in any value, converts the any value into a string and returns a pointer to a Color object.
@@ -180,20 +194,8 @@ func White(v any) *Color {
 // String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
 	var escapeCode string
-
-	switch {
-	case c.Bold && c.HighIntensity:
-		escapeCode = highIntensityBold[c.ChosenColor]
-
-	case c.Bold:
-		escapeCode = boldColors[c.ChosenColor]
 	
-	case c.HighIntensity:
-		escapeCode = highIntensity[c.ChosenColor]
 
-	default:
-		escapeCode = normalColors[c.ChosenColor]
-	}
 
 	return escapeCode + c.Value + reset
 }
@@ -233,4 +235,29 @@ func (c *Color) ToItalic() *Color {
 func (c *Color) ToStrikethrough() *Color {
 	c.Strikethrough = true
 	return c
+}
+
+// ApplyBackground applies a colored background to a Color object.
+//
+// Arguments:
+//   - colorOption: The color to be applied as the background
+//   - highIntensity: Whether the background should be displayed with high intensity
+//
+// Valid color options are:
+//   - ColorBlack
+//   - ColorRed
+//   - ColorGreen
+//   - ColorBlue
+//   - ColorMagenta
+//   - ColorCyan
+//   - ColorWhite
+func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Color {
+	if highIntensity {
+		c.HighIntensityBackground = true
+	}
+
+	return &Color{
+		BackgroundColor: string(colorOption),
+	}
+
 }
