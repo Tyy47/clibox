@@ -193,7 +193,8 @@ func White(v any) *Color {
 
 // String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
-	var escapeCode string
+	var escapeCode string = "\033["
+	
 	
 
 
@@ -252,12 +253,13 @@ func (c *Color) ToStrikethrough() *Color {
 //   - ColorCyan
 //   - ColorWhite
 func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Color {
+
+	c.Background = true
+	c.BackgroundColor = string(colorOption)
+
 	if highIntensity {
 		c.HighIntensityBackground = true
 	}
-
-	return &Color{
-		BackgroundColor: string(colorOption),
-	}
-
+	
+	return c
 }
