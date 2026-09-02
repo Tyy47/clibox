@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 )
@@ -29,4 +30,10 @@ func StringConverter(v any) string {
 		return fmt.Sprint(v)
 	}
 
+}
+
+// GetArgs returns a stringed array gathered from os.Args
+func GetArgs() *[]string {
+	args := os.Args
+	return &args
 }
