@@ -1,5 +1,5 @@
 // Package colors for clibox includes a bunch of utilies to create colored strings and custom titles for your cli tool.
-package colors
+package colorbin
 
 import (
 	"fmt"
