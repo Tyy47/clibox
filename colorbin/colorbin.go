@@ -1,4 +1,4 @@
-// Package colors for clibox includes a bunch of utilies to create colored strings and custom titles for your cli tool.
+// Package colorbin for clibox includes a bunch of utilies to create colored strings and custom titles for your cli tool.
 package colorbin
 
 import (
