@@ -121,6 +121,22 @@ func (r *Root) AddCommand(command *Command) error {
 	return nil
 }
 
+func (c *Command) AddFlag(flag *Flag) error {
+	
+	if err := validFlagChecker(flag); err != nil {
+		return err
+	}
+
+	for takenFlag := range c.Flags {
+		if takenFlag == flag.Name {
+			return fmt.Errorf("Flag name: %s is already taken by %s", takenFlag, flag.Name)
+		}
+	}
+	
+	c.Flags[flag.Name] = flag
+	return nil
+}
+
 func (r *Root) Run() error {
 	
 	// Users arguments
