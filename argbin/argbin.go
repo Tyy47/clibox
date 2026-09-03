@@ -81,7 +81,7 @@ func (r *Root) validate() error {
 
 func (c *Command) searchFlag(name string) (*Flag, bool) {
 	
-	if !isItNil(c) {
+	if isItNil(c) {
 		fmt.Errorf(ErrNilCommand.Error())
 		return nil, false
 	}
@@ -103,7 +103,7 @@ func (c *Command) searchFlag(name string) (*Flag, bool) {
 
 func (c *Command) parseFlags(ctx *Context, args []string) error {
 	
-	if !isItNil(c) {
+	if isItNil(c) {
 		return ErrNilCommand
 	}
 
@@ -182,7 +182,7 @@ func validFlagChecker(flag *Flag) error {
 
 func (r *Root) AddCommand(command *Command) error {
 	
-	if !isItNil(r) {
+	if isItNil(r) {
 		return ErrNilRoot
 	}
 
@@ -205,7 +205,7 @@ func (r *Root) AddCommand(command *Command) error {
 
 func (c *Command) AddFlag(flag *Flag) error {
 
-	if !isItNil(c) {
+	if isItNil(c) {
 		return ErrNilCommand
 	}
 	
