@@ -111,6 +111,15 @@ func validFlagChecker(flag *Flag) error {
 	return nil
 }
 
+func (r *Root) AddCommand(command *Command) error {
+	for takenName := range r.Commands {
+		if command.Name == takenName {
+			return fmt.Errorf("Command name %s already exists in command list: %v", command.Name, r.Commands)
+		}
+	}
+	r.Commands[command.Name] = command
+	return nil
+}
 
 func (r *Root) Run() error {
 	
