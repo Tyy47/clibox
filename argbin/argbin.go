@@ -56,6 +56,10 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 		if !ok {
 			continue
 		}
+
+		if err := validFlagChecker(flag); err != nil {
+			return err
+		}
 		
 		if flag.Execute == nil {
 			continue
@@ -85,6 +89,23 @@ func validCommandChecker(commands CommandList) error {
 		if commands[i].Execute == nil {
 			return fmt.Errorf("Command execute member can't be blank. Command: %v", commands[i])
 		}
+	}
+
+	return nil
+}
+
+// validFlagChecker checks if a given flag is valid to work with argbins parser
+func validFlagChecker(flag *Flag) error {
+	if flag.Name == "" {
+		return fmt.Errorf("Flag name member can't be empty: %v", flag)
+	}
+
+	if flag.Description == "" {
+		return fmt.Errorf("Flag description member can't be empty: %v", flag)
+	}
+
+	if flag.Execute == nil {
+		return fmt.Errorf("Flag execute member can't be empty: %v", flag)
 	}
 
 	return nil
