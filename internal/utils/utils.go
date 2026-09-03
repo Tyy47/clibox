@@ -34,6 +34,6 @@ func StringConverter(v any) string {
 
 // GetArgs returns a stringed array gathered from os.Args
 func GetArgs() *[]string {
-	args := os.Args
+	args := os.Args[1:]
 	return &args
 }
