@@ -1,33 +1,131 @@
-//
 package argbin
 
 import (
+	"fmt"
 
+	"github.com/Tyy47/clibox/internal/utils"
 )
 
-// Root is the "root" of the project/app. 
-//
-// Members:
-// 	- AppName: Stores the name of your application.
-// 	- Description: A brief description of your application.
-// 	- Commands: A map of available commands.
+type CommandList map[string]*Command
+
 type Root struct {
 	AppName string
 	Description string	
-	Commands map[string]*Command
+	Commands CommandList
 }
 
 type Command struct {
 	Name string
 	Description string
-	Flags []*Flag
+	Flags map[string]*Flag
+	Execute func(ctx *Context) error
 }
-
 
 type Flag struct {
 	Name string
-	
+	Description string
+	Aliases []string
+	Execute func(ctx *Context) error
+}
+
+type Context struct {
+	Command *Command
+	Values map[string]any
+}
+
+func (c *Command) searchFlag(name string) (*Flag, bool) {
+	for key, flag := range c.Flags {
+		if key == name || flag.Name == name {
+			return flag, true
+		}
+
+		for _, alias := range flag.Aliases {
+			if alias == name {
+				return flag, true
+			}
+		}
+	}
+
+
+	return nil, false
+}
+
+func (c *Command) parseFlags(ctx *Context, args []string) error {
+	for _, arg := range args {
+		flag, ok := c.searchFlag(arg)
+		if !ok {
+			continue
+		}
+		
+		if flag.Execute == nil {
+			continue
+		}
+
+		if err := flag.Execute(ctx); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+// validCommandChecker checks if a given command is valid to work with argbins parser
+func validCommandChecker(commands CommandList) error {
+	for i := range commands {
+
+		if commands[i].Name == "" {
+			return fmt.Errorf("Command name member can't be blank. Command: %v", commands[i])
+		}
+
+		if commands[i].Description == "" {
+			return fmt.Errorf("Command description member can't be blank. Command: %v", commands[i])
+		}
+
+		if commands[i].Execute == nil {
+			return fmt.Errorf("Command execute member can't be blank. Command: %v", commands[i])
+		}
+	}
+
+	return nil
 }
 
 
-func Run() {}
+func (r *Root) Run() error {
+	
+	// Users arguments
+	args := *utils.GetArgs()
+	
+	if err := validCommandChecker(r.Commands); err != nil {
+		return err
+	}
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		
+		command, ok := r.Commands[arg]
+		if !ok {
+			continue
+		}
+
+		ctx := &Context{
+			Command: command,
+			Values: make(map[string]any),
+		}
+
+		if err := command.parseFlags(ctx, args[i+1:]); err != nil {
+			return err
+		}
+
+		if err := command.Execute(ctx); err != nil {
+			return fmt.Errorf("Command cannot be executed: %v", err)
+		}
+
+	}
+
+	return nil
+}
+
+
+
+
