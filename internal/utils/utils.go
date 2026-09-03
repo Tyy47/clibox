@@ -37,4 +37,3 @@ func GetArgs() *[]string {
 	args := os.Args[1:]
 	return &args
 }
-

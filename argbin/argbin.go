@@ -1,6 +1,7 @@
 package argbin
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Tyy47/clibox/internal/utils"
@@ -24,8 +25,8 @@ type Command struct {
 type Flag struct {
 	Name string
 	Description string
-	Aliases []string
 	Execute func(ctx *Context) error
+	TakesValue bool
 }
 
 type Context struct {
@@ -33,16 +34,66 @@ type Context struct {
 	Values map[string]any
 }
 
+// A collection of errors for argbin
+var (
+	ErrMissingCommand = errors.New("no arguments provided")
+	ErrUnknownCommand = errors.New("unknown command")
+	ErrNilRoot = errors.New("root cannot be nil")
+	ErrNilCommand = errors.New("command cannot be nil")
+	ErrNilFlag = errors.New("flag cannot be nil")
+)
+
+// Checks if Root, Command or a Flag is nil and returns a bool based on the answer
+func isItNil[T *Root | *Command | *Flag ](item T) bool {
+	if item == nil {
+		return true
+	} else {
+		return false
+	}
+}
+
+// Roots validation method
+func (r *Root) validate() error {
+	if r.AppName == "" {
+		return fmt.Errorf("root appname cannot be empty")
+	}
+
+	if r.Description == "" {
+		return fmt.Errorf("root description cannot be empty")
+	}
+
+	if r.Commands == nil {
+		r.Commands = make(CommandList)
+	}
+
+	// Validate users created key maps for commands to make sure names and keys match
+	for key, command := range r.Commands {
+		if command == nil {
+			return ErrNilCommand
+		}
+		if key != command.Name {
+			return fmt.Errorf("command key %q does not match command name %q", key, command.Name)
+		}
+	}
+
+	return nil
+}
+
 func (c *Command) searchFlag(name string) (*Flag, bool) {
+	
+	if !isItNil(c) {
+		fmt.Errorf(ErrNilCommand.Error())
+		return nil, false
+	}
+
 	for key, flag := range c.Flags {
-		if key == name || flag.Name == name {
-			return flag, true
+		if flag == nil {
+			fmt.Errorf(ErrNilFlag.Error())
+			return nil, false
 		}
 
-		for _, alias := range flag.Aliases {
-			if alias == name {
-				return flag, true
-			}
+		if key == name || flag.Name == name {
+			return flag, true
 		}
 	}
 
@@ -51,6 +102,15 @@ func (c *Command) searchFlag(name string) (*Flag, bool) {
 }
 
 func (c *Command) parseFlags(ctx *Context, args []string) error {
+	
+	if !isItNil(c) {
+		return ErrNilCommand
+	}
+
+	if ctx.Values == nil {
+		ctx.Values = make(map[string]any)
+	}
+
 	for _, arg := range args {
 		flag, ok := c.searchFlag(arg)
 		if !ok {
@@ -76,6 +136,11 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 
 // validCommandChecker checks if a given command is valid to work with argbins parser
 func validCommandChecker(commands ...*Command) error {
+	for _, invalid := range commands {
+		if invalid == nil {
+			return ErrNilCommand
+		}
+	}
 
 	for _, single := range commands {
 		if single.Name == "" {
@@ -96,6 +161,10 @@ func validCommandChecker(commands ...*Command) error {
 
 // validFlagChecker checks if a given flag is valid to work with argbins parser
 func validFlagChecker(flag *Flag) error {
+	if flag == nil {
+		return ErrNilFlag
+	}
+
 	if flag.Name == "" {
 		return fmt.Errorf("Flag name member can't be empty: %v", flag)
 	}
@@ -112,10 +181,19 @@ func validFlagChecker(flag *Flag) error {
 }
 
 func (r *Root) AddCommand(command *Command) error {
+	
+	if !isItNil(r) {
+		return ErrNilRoot
+	}
 
 	if err := validCommandChecker(command); err != nil {
 		return err
 	}
+	
+	if r.Commands == nil {
+		r.Commands = make(CommandList)
+	}
+
 	for takenName := range r.Commands {
 		if command.Name == takenName {
 			return fmt.Errorf("Command name %s already exists in command list: %v", command.Name, r.Commands)
@@ -126,20 +204,22 @@ func (r *Root) AddCommand(command *Command) error {
 }
 
 func (c *Command) AddFlag(flag *Flag) error {
+
+	if !isItNil(c) {
+		return ErrNilCommand
+	}
 	
 	if err := validFlagChecker(flag); err != nil {
 		return err
 	}
 
+	if c.Flags == nil {
+		c.Flags = make(map[string]*Flag)
+	}
+
 	for takenFlag := range c.Flags {
 		if takenFlag == flag.Name {
 			return fmt.Errorf("Flag name: %s is already taken by %s", takenFlag, flag.Name)
-		}
-		
-		for _, alias := range flag.Aliases {
-			if takenFlag == alias {
-				return fmt.Errorf("Flag name: %s is already taken by alias %s", takenFlag, alias)
-			}
 		}
 	}
 	
@@ -148,37 +228,40 @@ func (c *Command) AddFlag(flag *Flag) error {
 }
 
 func (r *Root) Run() error {
+
+	// Checks if Root is nil
+	if r == nil {
+		return ErrNilRoot
+	}
+	
+	// Validates root before fully executing to make sure the struct is valid
+	if err := r.validate(); err != nil {
+		return err
+	}
 	
 	// Users arguments
 	args := *utils.GetArgs()
 	
-	for _, command := range r.Commands {
-		if err := validCommandChecker(command); err != nil {
-			return err
-		}
+	if len(args) == 0 {
+		return ErrMissingCommand
+	}
+	
+	command, ok := r.Commands[args[0]]
+	if !ok {
+		return fmt.Errorf("%w: %q", ErrUnknownCommand, args[0])
 	}
 
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		
-		command, ok := r.Commands[arg]
-		if !ok {
-			continue
-		}
+	ctx := &Context{
+		Command: command,
+		Values: make(map[string]any),
+	}
 
-		ctx := &Context{
-			Command: command,
-			Values: make(map[string]any),
-		}
+	if err := command.parseFlags(ctx, args[1:]); err != nil {
+		return err
+	}
 
-		if err := command.parseFlags(ctx, args[i+1:]); err != nil {
-			return err
-		}
-
-		if err := command.Execute(ctx); err != nil {
-			return fmt.Errorf("Command cannot be executed: %w", err)
-		}
-
+	if err := command.Execute(ctx); err != nil {
+		return fmt.Errorf("command cannot be executed: %w", err)
 	}
 
 	return nil
