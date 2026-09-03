@@ -75,19 +75,19 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 }
 
 // validCommandChecker checks if a given command is valid to work with argbins parser
-func validCommandChecker(commands CommandList) error {
-	for i := range commands {
+func validCommandChecker(commands ...*Command) error {
 
-		if commands[i].Name == "" {
-			return fmt.Errorf("Command name member can't be blank. Command: %v", commands[i])
+	for _, single := range commands {
+		if single.Name == "" {
+			return fmt.Errorf("Command name member can't be blank. Command: %v", single)
 		}
 
-		if commands[i].Description == "" {
-			return fmt.Errorf("Command description member can't be blank. Command: %v", commands[i])
+		if single.Description == "" {
+			return fmt.Errorf("Command description member can't be blank. Command: %v", single)
 		}
 
-		if commands[i].Execute == nil {
-			return fmt.Errorf("Command execute member can't be blank. Command: %v", commands[i])
+		if single.Execute == nil {
+			return fmt.Errorf("Command execute member can't be blank. Command: %v", single)
 		}
 	}
 
@@ -112,6 +112,10 @@ func validFlagChecker(flag *Flag) error {
 }
 
 func (r *Root) AddCommand(command *Command) error {
+
+	if err := validCommandChecker(command); err != nil {
+		return err
+	}
 	for takenName := range r.Commands {
 		if command.Name == takenName {
 			return fmt.Errorf("Command name %s already exists in command list: %v", command.Name, r.Commands)
@@ -131,6 +135,12 @@ func (c *Command) AddFlag(flag *Flag) error {
 		if takenFlag == flag.Name {
 			return fmt.Errorf("Flag name: %s is already taken by %s", takenFlag, flag.Name)
 		}
+		
+		for _, alias := range flag.Aliases {
+			if takenFlag == alias {
+				return fmt.Errorf("Flag name: %s is already taken by alias %s", takenFlag, alias)
+			}
+		}
 	}
 	
 	c.Flags[flag.Name] = flag
@@ -142,8 +152,10 @@ func (r *Root) Run() error {
 	// Users arguments
 	args := *utils.GetArgs()
 	
-	if err := validCommandChecker(r.Commands); err != nil {
-		return err
+	for _, command := range r.Commands {
+		if err := validCommandChecker(command); err != nil {
+			return err
+		}
 	}
 
 	for i := 0; i < len(args); i++ {
@@ -164,7 +176,7 @@ func (r *Root) Run() error {
 		}
 
 		if err := command.Execute(ctx); err != nil {
-			return fmt.Errorf("Command cannot be executed: %v", err)
+			return fmt.Errorf("Command cannot be executed: %w", err)
 		}
 
 	}
