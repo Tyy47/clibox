@@ -3,112 +3,206 @@ package argbin
 import (
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestCommandSearchFlag(t *testing.T) {
 	verbose := &Flag{Name: "verbose"}
-	output := &Flag{Name: "output"}
-	command := &Command{
-		Flags: map[string]*Flag{
-			"verbose": verbose,
-			"output":  output,
-		},
+	command := &Command{Flags: map[string]*Flag{"verbose": verbose}}
+
+	got, ok := command.searchFlag("verbose")
+	if !ok || got != verbose {
+		t.Fatalf("searchFlag() = (%p, %t), want (%p, true)", got, ok, verbose)
 	}
+
+	if got, ok := command.searchFlag("--verbose"); ok || got != nil {
+		t.Fatalf("searchFlag() with CLI spelling = (%v, %t), want (nil, false)", got, ok)
+	}
+
+	var nilCommand *Command
+	if got, ok := nilCommand.searchFlag("verbose"); ok || got != nil {
+		t.Fatalf("nil searchFlag() = (%v, %t), want (nil, false)", got, ok)
+	}
+}
+
+func TestCommandSearchShortFlag(t *testing.T) {
+	verbose := &Flag{Name: "verbose", Short: "v"}
+	command := &Command{Flags: map[string]*Flag{"verbose": verbose}}
+
+	got, ok := command.searchShortFlag("v")
+	if !ok || got != verbose {
+		t.Fatalf("searchShortFlag() = (%p, %t), want (%p, true)", got, ok, verbose)
+	}
+
+	if got, ok := command.searchShortFlag("x"); ok || got != nil {
+		t.Fatalf("unknown searchShortFlag() = (%v, %t), want (nil, false)", got, ok)
+	}
+
+	var nilCommand *Command
+	if got, ok := nilCommand.searchShortFlag("v"); ok || got != nil {
+		t.Fatalf("nil searchShortFlag() = (%v, %t), want (nil, false)", got, ok)
+	}
+}
+
+func TestCommandParseFlagsLongPresenceFlags(t *testing.T) {
+	var executed []string
+	command := &Command{Flags: map[string]*Flag{
+		"verbose": {
+			Name:        "verbose",
+			Short:       "v",
+			Description: "enable verbose output",
+			Execute: func(ctx *Context) error {
+				executed = append(executed, "verbose")
+				return nil
+			},
+		},
+		"force": {
+			Name:        "force",
+			Short:       "f",
+			Description: "force action",
+			Execute: func(ctx *Context) error {
+				executed = append(executed, "force")
+				return nil
+			},
+		},
+	}}
+
+	ctx := &Context{Command: command, Values: make(map[string]any)}
+	if err := command.parseFlags(ctx, []string{"--verbose", "--force"}); err != nil {
+		t.Fatalf("parseFlags() error = %v", err)
+	}
+
+	if got := strings.Join(executed, ","); got != "verbose,force" {
+		t.Fatalf("execution order = %q, want verbose,force", got)
+	}
+	if got, ok := ctx.Values["verbose"].(bool); !ok || !got {
+		t.Fatalf("ctx.Values[verbose] = %#v, want true", ctx.Values["verbose"])
+	}
+	if got, ok := ctx.Values["force"].(bool); !ok || !got {
+		t.Fatalf("ctx.Values[force] = %#v, want true", ctx.Values["force"])
+	}
+}
+
+func TestCommandParseFlagsCapturesPositionalsAndTerminator(t *testing.T) {
+	command := &Command{Flags: map[string]*Flag{
+		"verbose": {
+			Name:        "verbose",
+			Short:       "v",
+			Description: "enable verbose output",
+			Execute:     func(*Context) error { return nil },
+		},
+	}}
+
+	ctx := &Context{Values: make(map[string]any)}
+	args := []string{"input.txt", "--verbose", "--", "--literal", "tail"}
+	if err := command.parseFlags(ctx, args); err != nil {
+		t.Fatalf("parseFlags() error = %v", err)
+	}
+
+	wantArgs := []string{"input.txt", "--literal", "tail"}
+	if !reflect.DeepEqual(ctx.Args, wantArgs) {
+		t.Fatalf("ctx.Args = %#v, want %#v", ctx.Args, wantArgs)
+	}
+}
+
+func TestCommandParseFlagsTakesValue(t *testing.T) {
+	var callbackValue string
+	command := &Command{Flags: map[string]*Flag{
+		"output": {
+			Name:        "output",
+			Short:       "o",
+			Description: "set output path",
+			TakesValue:  true,
+			Execute: func(ctx *Context) error {
+				callbackValue, _ = ctx.Values["output"].(string)
+				return nil
+			},
+		},
+	}}
+
+	ctx := &Context{Values: make(map[string]any)}
+	if err := command.parseFlags(ctx, []string{"--output", "file.txt"}); err != nil {
+		t.Fatalf("parseFlags() long value error = %v", err)
+	}
+	if got := ctx.Values["output"]; got != "file.txt" {
+		t.Fatalf("ctx.Values[output] = %#v, want file.txt", got)
+	}
+	if callbackValue != "file.txt" {
+		t.Fatalf("callback value = %q, want file.txt", callbackValue)
+	}
+
+}
+
+func TestCommandParseFlagsErrors(t *testing.T) {
+	command := &Command{Flags: map[string]*Flag{
+		"verbose": {
+			Name:        "verbose",
+			Short:       "v",
+			Description: "enable verbose output",
+			Execute:     func(*Context) error { return nil },
+		},
+		"output": {
+			Name:        "output",
+			Short:       "o",
+			Description: "set output path",
+			TakesValue:  true,
+			Execute:     func(*Context) error { return nil },
+		},
+	}}
 
 	tests := []struct {
 		name string
-		arg  string
-		want *Flag
-		ok   bool
+		args []string
+		want error
 	}{
-		{name: "known key", arg: "verbose", want: verbose, ok: true},
-		{name: "another known key", arg: "output", want: output, ok: true},
-		{name: "cli long spelling is not normalized yet", arg: "--verbose", want: nil, ok: false},
-		{name: "cli short spelling is not used yet", arg: "-v", want: nil, ok: false},
-		{name: "unknown", arg: "missing", want: nil, ok: false},
+		{name: "unknown long", args: []string{"--missing"}, want: ErrUnknownFlag},
+		{name: "unknown short", args: []string{"-x"}, want: ErrUnknownFlag},
+		{name: "grouped short unsupported", args: []string{"-vf"}, want: ErrUnknownFlag},
+		{name: "equals unsupported", args: []string{"--output=file.txt"}, want: ErrUnexpectedFlagValue},
+		{name: "duplicate long", args: []string{"--verbose", "--verbose"}, want: ErrDuplicateFlag},
+		{name: "short spelling unsupported", args: []string{"--verbose", "-v"}, want: ErrUnknownFlag},
+		{name: "missing value", args: []string{"--output"}, want: ErrMissingFlagValue},
+		{name: "value is terminator", args: []string{"--output", "--"}, want: ErrMissingFlagValue},
+		{name: "value looks like flag", args: []string{"--output", "-x"}, want: ErrMissingFlagValue},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := command.searchFlag(tt.arg)
-			if ok != tt.ok || got != tt.want {
-				t.Fatalf("searchFlag(%q) = (%p, %t), want (%p, %t)", tt.arg, got, ok, tt.want, tt.ok)
+			err := command.parseFlags(&Context{}, tt.args)
+			if !errors.Is(err, tt.want) {
+				t.Fatalf("parseFlags() error = %v, want %v", err, tt.want)
 			}
 		})
 	}
-
-	t.Run("nil command", func(t *testing.T) {
-		var command *Command
-		if got, ok := command.searchFlag("verbose"); ok || got != nil {
-			t.Fatalf("searchFlag() = (%v, %t), want (nil, false)", got, ok)
-		}
-	})
-
-	t.Run("nil flag map", func(t *testing.T) {
-		command := &Command{}
-		if got, ok := command.searchFlag("anything"); ok || got != nil {
-			t.Fatalf("searchFlag() = (%v, %t), want (nil, false)", got, ok)
-		}
-	})
 }
 
-func TestCommandParseFlagsExecutesKnownFlagsInOrder(t *testing.T) {
-	var executionOrder []string
-	command := &Command{
-		Flags: map[string]*Flag{
-			"verbose": {
-				Name:        "verbose",
-				Description: "enable verbose output",
-				Execute: func(ctx *Context) error {
-					executionOrder = append(executionOrder, "verbose")
-					ctx.Values["verbose"] = true
-					return nil
-				},
-			},
-			"force": {
-				Name:        "force",
-				Description: "force the operation",
-				Execute: func(ctx *Context) error {
-					executionOrder = append(executionOrder, "force")
-					ctx.Values["force"] = true
-					return nil
-				},
+func TestCommandParseFlagsParsesBeforeExecutingCallbacks(t *testing.T) {
+	executed := false
+	command := &Command{Flags: map[string]*Flag{
+		"verbose": {
+			Name:        "verbose",
+			Description: "enable verbose output",
+			Execute: func(*Context) error {
+				executed = true
+				return nil
 			},
 		},
-	}
-	ctx := &Context{Command: command, Values: make(map[string]any)}
+	}}
 
-	err := command.parseFlags(ctx, []string{"verbose", "force"})
-	if err != nil {
-		t.Fatalf("parseFlags() error = %v", err)
-	}
-	if got, ok := ctx.Values["verbose"].(bool); !ok || !got {
-		t.Fatalf("verbose context value = %#v, want true", ctx.Values["verbose"])
-	}
-	if got, ok := ctx.Values["force"].(bool); !ok || !got {
-		t.Fatalf("force context value = %#v, want true", ctx.Values["force"])
-	}
-	if got := strings.Join(executionOrder, ","); got != "verbose,force" {
-		t.Fatalf("flag execution order = %q, want %q", got, "verbose,force")
-	}
-}
-
-func TestCommandParseFlagsRejectsUnknownFlag(t *testing.T) {
-	command := &Command{Flags: map[string]*Flag{}}
-
-	err := command.parseFlags(&Context{Values: make(map[string]any)}, []string{"missing"})
+	err := command.parseFlags(&Context{}, []string{"--verbose", "--missing"})
 	if !errors.Is(err, ErrUnknownFlag) {
 		t.Fatalf("parseFlags() error = %v, want ErrUnknownFlag", err)
+	}
+	if executed {
+		t.Fatal("flag callback executed before the entire input was validated")
 	}
 }
 
 func TestCommandParseFlagsNilGuards(t *testing.T) {
-	ctx := &Context{Values: make(map[string]any)}
-
 	var command *Command
-	if err := command.parseFlags(ctx, nil); !errors.Is(err, ErrNilCommand) {
+	if err := command.parseFlags(&Context{}, nil); !errors.Is(err, ErrNilCommand) {
 		t.Fatalf("nil command parseFlags() error = %v, want ErrNilCommand", err)
 	}
 
@@ -118,77 +212,22 @@ func TestCommandParseFlagsNilGuards(t *testing.T) {
 	}
 }
 
-func TestCommandParseFlagsStopsOnError(t *testing.T) {
+func TestCommandParseFlagsWrapsCallbackError(t *testing.T) {
 	wantErr := errors.New("flag failed")
-	laterExecuted := false
-	command := &Command{
-		Flags: map[string]*Flag{
-			"fail": {
-				Name:        "fail",
-				Description: "return an error",
-				Execute: func(*Context) error {
-					return wantErr
-				},
-			},
-			"later": {
-				Name:        "later",
-				Description: "must not execute",
-				Execute: func(*Context) error {
-					laterExecuted = true
-					return nil
-				},
-			},
+	command := &Command{Flags: map[string]*Flag{
+		"fail": {
+			Name:        "fail",
+			Description: "return an error",
+			Execute:     func(*Context) error { return wantErr },
 		},
-	}
+	}}
 
-	err := command.parseFlags(&Context{Values: make(map[string]any)}, []string{"fail", "later"})
+	err := command.parseFlags(&Context{Values: make(map[string]any)}, []string{"--fail"})
 	if !errors.Is(err, wantErr) {
-		t.Fatalf("parseFlags() error = %v, want %v", err, wantErr)
+		t.Fatalf("parseFlags() error = %v, want wrapped %v", err, wantErr)
 	}
-	if laterExecuted {
-		t.Fatal("flag after a failed flag was executed")
-	}
-}
-
-func TestCommandParseFlagsRejectsInvalidKnownFlag(t *testing.T) {
-	command := &Command{
-		Flags: map[string]*Flag{
-			"invalid": {
-				Name:        "invalid",
-				Description: "",
-				Execute:     func(*Context) error { return nil },
-			},
-		},
-	}
-
-	err := command.parseFlags(&Context{Values: make(map[string]any)}, []string{"invalid"})
-	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "description") {
-		t.Fatalf("parseFlags() error = %v, want missing-description error", err)
-	}
-}
-
-func TestCommandParseFlagsDoesNotConsumeTakesValueYet(t *testing.T) {
-	executed := false
-	command := &Command{
-		Flags: map[string]*Flag{
-			"output": {
-				Name:        "output",
-				Description: "set output",
-				TakesValue:  true,
-				Execute: func(*Context) error {
-					executed = true
-					return nil
-				},
-			},
-		},
-	}
-
-	err := command.parseFlags(&Context{Values: make(map[string]any)}, []string{"output", "file.txt"})
-	if !errors.Is(err, ErrUnknownFlag) {
-		t.Fatalf("parseFlags() error = %v, want ErrUnknownFlag for unconsumed value", err)
-	}
-	if !executed {
-		t.Fatal("current parser should execute the flag before failing on the value token")
+	if err == nil || !strings.Contains(err.Error(), `flag "fail" cannot be executed`) {
+		t.Fatalf("parseFlags() error = %v, want flag context", err)
 	}
 }
 
@@ -238,9 +277,11 @@ func TestValidFlagChecker(t *testing.T) {
 		wantErr  error
 		wantText string
 	}{
-		{name: "valid", flag: &Flag{Name: "force", Description: "force it", Execute: validExecute}},
+		{name: "valid", flag: &Flag{Name: "force", Short: "f", Description: "force it", Execute: validExecute}},
 		{name: "nil flag", flag: nil, wantErr: ErrNilFlag},
 		{name: "missing name", flag: &Flag{Description: "force it", Execute: validExecute}, wantText: "name"},
+		{name: "short too long", flag: &Flag{Name: "force", Short: "ff", Description: "force it", Execute: validExecute}, wantText: "short"},
+		{name: "short contains dash", flag: &Flag{Name: "force", Short: "-", Description: "force it", Execute: validExecute}, wantText: "short"},
 		{name: "missing description", flag: &Flag{Name: "force", Execute: validExecute}, wantText: "description"},
 		{name: "missing execute", flag: &Flag{Name: "force", Description: "force it"}, wantText: "execute"},
 	}
@@ -272,20 +313,16 @@ func TestRootValidate(t *testing.T) {
 	validFlagExecute := func(*Context) error { return nil }
 
 	t.Run("valid root", func(t *testing.T) {
-		root := &Root{
-			AppName:     "app",
-			Description: "test app",
-			Commands: CommandList{
-				"build": {
-					Name:        "build",
-					Description: "build it",
-					Execute:     validExecute,
-					Flags: map[string]*Flag{
-						"verbose": {Name: "verbose", Description: "verbose output", Execute: validFlagExecute},
-					},
+		root := &Root{AppName: "app", Description: "test app", Commands: CommandList{
+			"build": {
+				Name:        "build",
+				Description: "build it",
+				Execute:     validExecute,
+				Flags: map[string]*Flag{
+					"verbose": {Name: "verbose", Short: "v", Description: "verbose output", Execute: validFlagExecute},
 				},
 			},
-		}
+		}}
 		if err := root.validate(); err != nil {
 			t.Fatalf("validate() error = %v", err)
 		}
@@ -299,35 +336,44 @@ func TestRootValidate(t *testing.T) {
 	})
 
 	t.Run("command key mismatch", func(t *testing.T) {
-		root := &Root{
-			AppName:     "app",
-			Description: "test app",
-			Commands: CommandList{
-				"wrong": {Name: "build", Description: "build it", Execute: validExecute},
-			},
-		}
+		root := &Root{AppName: "app", Description: "test app", Commands: CommandList{
+			"wrong": {Name: "build", Description: "build it", Execute: validExecute},
+		}}
 		if err := root.validate(); err == nil || !strings.Contains(err.Error(), "command key") {
 			t.Fatalf("validate() error = %v, want command key mismatch", err)
 		}
 	})
 
 	t.Run("flag key mismatch", func(t *testing.T) {
-		root := &Root{
-			AppName:     "app",
-			Description: "test app",
-			Commands: CommandList{
-				"build": {
-					Name:        "build",
-					Description: "build it",
-					Execute:     validExecute,
-					Flags: map[string]*Flag{
-						"wrong": {Name: "verbose", Description: "verbose output", Execute: validFlagExecute},
-					},
+		root := &Root{AppName: "app", Description: "test app", Commands: CommandList{
+			"build": {
+				Name:        "build",
+				Description: "build it",
+				Execute:     validExecute,
+				Flags: map[string]*Flag{
+					"wrong": {Name: "verbose", Description: "verbose output", Execute: validFlagExecute},
 				},
 			},
-		}
+		}}
 		if err := root.validate(); err == nil || !strings.Contains(err.Error(), "flag key") {
 			t.Fatalf("validate() error = %v, want flag key mismatch", err)
+		}
+	})
+
+	t.Run("duplicate short", func(t *testing.T) {
+		root := &Root{AppName: "app", Description: "test app", Commands: CommandList{
+			"build": {
+				Name:        "build",
+				Description: "build it",
+				Execute:     validExecute,
+				Flags: map[string]*Flag{
+					"verbose": {Name: "verbose", Short: "v", Description: "verbose output", Execute: validFlagExecute},
+					"version": {Name: "version", Short: "v", Description: "show version", Execute: validFlagExecute},
+				},
+			},
+		}}
+		if err := root.validate(); err == nil || !strings.Contains(err.Error(), "flag short") {
+			t.Fatalf("validate() error = %v, want duplicate short error", err)
 		}
 	})
 }
@@ -354,11 +400,7 @@ func TestRootAddCommand(t *testing.T) {
 
 func TestCommandAddFlag(t *testing.T) {
 	command := &Command{}
-	flag := &Flag{
-		Name:        "verbose",
-		Description: "enable verbose output",
-		Execute:     func(*Context) error { return nil },
-	}
+	flag := &Flag{Name: "verbose", Short: "v", Description: "enable verbose output", Execute: func(*Context) error { return nil }}
 
 	if err := command.AddFlag(flag); err != nil {
 		t.Fatalf("AddFlag() error = %v", err)
@@ -381,32 +423,45 @@ func TestCommandAddFlag(t *testing.T) {
 	}
 }
 
-func TestRootRunExecutesFlagsBeforeCommand(t *testing.T) {
-	setTestArgs(t, "build", "verbose")
+func TestRootRunExecutesParsedFlagsThenCommand(t *testing.T) {
+	setTestArgs(t, "build", "input.go", "--output", "bin/app", "--verbose")
 
-	var flagExecuted bool
+	var events []string
 	command := &Command{Name: "build", Description: "build the project"}
 	command.Flags = map[string]*Flag{
 		"verbose": {
 			Name:        "verbose",
-			Description: "enable verbose output",
 			Short:       "v",
+			Description: "enable verbose output",
 			Execute: func(ctx *Context) error {
-				flagExecuted = true
-				ctx.Values["verbose"] = true
+				events = append(events, "verbose")
+				return nil
+			},
+		},
+		"output": {
+			Name:        "output",
+			Short:       "o",
+			Description: "set output path",
+			TakesValue:  true,
+			Execute: func(ctx *Context) error {
+				events = append(events, "output")
+				if got := ctx.Values["output"]; got != "bin/app" {
+					t.Fatalf("ctx.Values[output] in callback = %#v, want bin/app", got)
+				}
 				return nil
 			},
 		},
 	}
 	command.Execute = func(ctx *Context) error {
-		if !flagExecuted {
-			t.Fatal("command executed before its flag")
-		}
+		events = append(events, "command")
 		if ctx.Command != command {
 			t.Fatalf("context command = %p, want %p", ctx.Command, command)
 		}
-		if verbose, ok := ctx.Values["verbose"].(bool); !ok || !verbose {
-			t.Fatalf("verbose context value = %#v, want true", ctx.Values["verbose"])
+		if got := ctx.Values["verbose"]; got != true {
+			t.Fatalf("ctx.Values[verbose] = %#v, want true", got)
+		}
+		if !reflect.DeepEqual(ctx.Args, []string{"input.go"}) {
+			t.Fatalf("ctx.Args = %#v, want input.go", ctx.Args)
 		}
 		return nil
 	}
@@ -415,10 +470,13 @@ func TestRootRunExecutesFlagsBeforeCommand(t *testing.T) {
 	if err := root.Run(); err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
+	if got := strings.Join(events, ","); got != "output,verbose,command" {
+		t.Fatalf("events = %q, want output,verbose,command", got)
+	}
 }
 
 func TestRootRunReturnsFlagErrorWithoutExecutingCommand(t *testing.T) {
-	setTestArgs(t, "build", "fail")
+	setTestArgs(t, "build", "--fail")
 
 	wantErr := errors.New("bad flag")
 	commandExecuted := false
@@ -426,11 +484,7 @@ func TestRootRunReturnsFlagErrorWithoutExecutingCommand(t *testing.T) {
 		Name:        "build",
 		Description: "build the project",
 		Flags: map[string]*Flag{
-			"fail": {
-				Name:        "fail",
-				Description: "fail parsing",
-				Execute:     func(*Context) error { return wantErr },
-			},
+			"fail": {Name: "fail", Description: "fail parsing", Execute: func(*Context) error { return wantErr }},
 		},
 		Execute: func(*Context) error {
 			commandExecuted = true
@@ -451,11 +505,7 @@ func TestRootRunReportsCommandError(t *testing.T) {
 	setTestArgs(t, "build")
 
 	wantErr := errors.New("build failed")
-	command := &Command{
-		Name:        "build",
-		Description: "build the project",
-		Execute:     func(*Context) error { return wantErr },
-	}
+	command := &Command{Name: "build", Description: "build the project", Execute: func(*Context) error { return wantErr }}
 
 	err := (&Root{AppName: "app", Description: "test app", Commands: CommandList{"build": command}}).Run()
 	if !errors.Is(err, wantErr) {
@@ -479,34 +529,11 @@ func TestRootRunReportsMissingAndUnknownCommand(t *testing.T) {
 	})
 
 	t.Run("unknown command", func(t *testing.T) {
-		setTestArgs(t, "unknown", "flag")
+		setTestArgs(t, "unknown", "--flag")
 		if err := root.Run(); !errors.Is(err, ErrUnknownCommand) {
 			t.Fatalf("Run() error = %v, want ErrUnknownCommand", err)
 		}
 	})
-}
-
-func TestRootRunRejectsUnknownFlag(t *testing.T) {
-	setTestArgs(t, "build", "unknown")
-	executed := false
-	root := &Root{AppName: "app", Description: "test app", Commands: CommandList{
-		"build": {
-			Name:        "build",
-			Description: "build the project",
-			Execute: func(*Context) error {
-				executed = true
-				return nil
-			},
-		},
-	}}
-
-	err := root.Run()
-	if !errors.Is(err, ErrUnknownFlag) {
-		t.Fatalf("Run() error = %v, want ErrUnknownFlag", err)
-	}
-	if executed {
-		t.Fatal("command executed after unknown flag")
-	}
 }
 
 func setTestArgs(t *testing.T, args ...string) {

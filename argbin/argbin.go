@@ -11,53 +11,54 @@ import (
 type CommandList map[string]*Command
 
 type Root struct {
-	AppName string
-	Description string	
-	Commands CommandList
+	AppName     string
+	Description string
+	Commands    CommandList
 }
 
 type Command struct {
-	Name string
+	Name        string
 	Description string
-	Flags map[string]*Flag
-	Execute func(ctx *Context) error
+	Flags       map[string]*Flag
+	Execute     func(ctx *Context) error
 }
 
 type Flag struct {
-	Name string // logical name: "verbose"
-	Short string // optional short hand: "v"
+	Name        string // logical name: "verbose"
+	Short       string // optional short hand: "v"
 	Description string
-	Execute func(ctx *Context) error
-	TakesValue bool
+	Execute     func(ctx *Context) error
+	TakesValue  bool
 }
 
 type Context struct {
 	Command *Command
-	Values map[string]any
-	Args []string
+	Values  map[string]any
+	Args    []string
 }
 
 type parsedFlag struct {
-	flag *Flag
+	flag  *Flag
 	value *string
 }
 
 type parsedInput struct {
 	flags []parsedFlag
-	args []string
+	args  []string
 }
 
 // A collection of errors for argbin
 var (
-	ErrMissingCommand = errors.New("no arguments provided")
-	ErrUnknownCommand = errors.New("unknown command")
-	ErrNilRoot = errors.New("root cannot be nil")
-	ErrNilCommand = errors.New("command cannot be nil")
-	ErrNilFlag = errors.New("flag cannot be nil")
-	ErrNilContext = errors.New("context cannot be nil")
-	ErrUnknownFlag = errors.New("unknown flag")
-    ErrDuplicateFlag    = errors.New("duplicate flag")
-    ErrMissingFlagValue = errors.New("missing flag value")
+	ErrMissingCommand      = errors.New("no arguments provided")
+	ErrUnknownCommand      = errors.New("unknown command")
+	ErrNilRoot             = errors.New("root cannot be nil")
+	ErrNilCommand          = errors.New("command cannot be nil")
+	ErrNilFlag             = errors.New("flag cannot be nil")
+	ErrNilContext          = errors.New("context cannot be nil")
+	ErrUnknownFlag         = errors.New("unknown flag")
+	ErrDuplicateFlag       = errors.New("duplicate flag")
+	ErrMissingFlagValue    = errors.New("missing flag value")
+	ErrUnexpectedFlagValue = errors.New("unexpected flag value")
 )
 
 // Roots validation method
@@ -76,9 +77,9 @@ func (r *Root) validate() error {
 
 	// Validate users created key maps for commands to make sure names and keys match
 	for key, command := range r.Commands {
-        if err := command.validate(); err != nil {
-            return fmt.Errorf("command %q: %w", key, err)
-        }
+		if err := command.validate(); err != nil {
+			return fmt.Errorf("command %q: %w", key, err)
+		}
 		if key != command.Name {
 			return fmt.Errorf("command key %q does not match command name %q", key, command.Name)
 		}
@@ -88,31 +89,33 @@ func (r *Root) validate() error {
 }
 
 func (c *Command) validate() error {
-    if err := validCommandChecker(c); err != nil {
-        return err
-    }
+	if err := validCommandChecker(c); err != nil {
+		return err
+	}
 
 	shorts := make(map[string]string)
 
-    for key, flag := range c.Flags {
-        if err := validFlagChecker(flag); err != nil {
-            return fmt.Errorf("flag %q: %w", key, err)
-        }
-        if key != flag.Name {
-            return fmt.Errorf("flag key %q does not match flag name %q", key, flag.Name)
-        }
+	for key, flag := range c.Flags {
+		if err := validFlagChecker(flag); err != nil {
+			return fmt.Errorf("flag %q: %w", key, err)
+		}
+		if strings.HasPrefix(flag.Name, "-") || strings.Contains(flag.Name, "=") || strings.ContainsAny(flag.Name, " \t\n") {
+			return fmt.Errorf("Flag name must be a logical name without dashes, equals, or whitespace: %v", flag)
+		}
+		if key != flag.Name {
+			return fmt.Errorf("flag key %q does not match flag name %q", key, flag.Name)
+		}
 		if flag.Short != "" {
 			if existing, ok := shorts[flag.Short]; ok {
-                return fmt.Errorf("flag short %q is used by both %q and %q", flag.Short, existing, flag.Name)
-            }
-            shorts[flag.Short] = flag.Name
+				return fmt.Errorf("flag short %q is used by both %q and %q", flag.Short, existing, flag.Name)
+			}
+			shorts[flag.Short] = flag.Name
 		}
-    }
-    return nil
+	}
+	return nil
 }
 
 func (c *Command) searchFlag(name string) (*Flag, bool) {
-	
 	if c == nil {
 		return nil, false
 	}
@@ -125,7 +128,7 @@ func (c *Command) searchShortFlag(short string) (*Flag, bool) {
 	if c == nil {
 		return nil, false
 	}
-	
+
 	for _, flag := range c.Flags {
 		if flag == nil {
 			continue
@@ -135,69 +138,85 @@ func (c *Command) searchShortFlag(short string) (*Flag, bool) {
 			return flag, true
 		}
 	}
-	
+
 	return nil, false
 }
 
+func (c *Command) resolveFlagToken(token string) (*Flag, error) {
+	if strings.HasPrefix(token, "--") {
+		name := strings.TrimPrefix(token, "--")
+		if name == "" {
+			return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+		}
+
+		flag, ok := c.searchFlag(name)
+		if !ok {
+			return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+		}
+		return flag, nil
+	}
+
+	return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+}
+
 func (c *Command) parseInput(args []string) (*parsedInput, error) {
-    if c == nil {
-        return nil, ErrNilCommand
-    }
+	if c == nil {
+		return nil, ErrNilCommand
+	}
 
-    parsed := &parsedInput{}
-    seen := make(map[string]struct{})
+	parsed := &parsedInput{}
+	seen := make(map[string]struct{})
 
-    for i := 0; i < len(args); i++ {
-        token := args[i]
+	for i := 0; i < len(args); i++ {
+		token := args[i]
 
-        if token == "--" {
-            parsed.args = append(parsed.args, args[i+1:]...)
-            break
-        }
+		if token == "--" {
+			parsed.args = append(parsed.args, args[i+1:]...)
+			break
+		}
 
-        if token == "" {
-            parsed.args = append(parsed.args, token)
-            continue
-        }
+		if token == "" {
+			parsed.args = append(parsed.args, token)
+			continue
+		}
 
-        if token == "-" || !strings.HasPrefix(token, "-") {
-            parsed.args = append(parsed.args, token)
-            continue
-        }
+		if token == "-" || !strings.HasPrefix(token, "-") {
+			parsed.args = append(parsed.args, token)
+			continue
+		}
 
-        if strings.Contains(token, "=") {
-            return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
-        }
+		if strings.Contains(token, "=") {
+			return nil, fmt.Errorf("%w: %q", ErrUnexpectedFlagValue, token)
+		}
 
-        flag, err := c.resolveFlagToken(token)
-        if err != nil {
-            return nil, err
-        }
+		flag, err := c.resolveFlagToken(token)
+		if err != nil {
+			return nil, err
+		}
 
-        if _, ok := seen[flag.Name]; ok {
-            return nil, fmt.Errorf("%w: %s", ErrDuplicateFlag, flag.Name)
-        }
-        seen[flag.Name] = struct{}{}
+		if _, ok := seen[flag.Name]; ok {
+			return nil, fmt.Errorf("%w: %s", ErrDuplicateFlag, flag.Name)
+		}
+		seen[flag.Name] = struct{}{}
 
-        if !flag.TakesValue {
-            parsed.flags = append(parsed.flags, parsedFlag{flag: flag})
-            continue
-        }
+		if !flag.TakesValue {
+			parsed.flags = append(parsed.flags, parsedFlag{flag: flag})
+			continue
+		}
 
-        if i+1 >= len(args) || args[i+1] == "--" || strings.HasPrefix(args[i+1], "-") {
-            return nil, fmt.Errorf("%w: %s", ErrMissingFlagValue, flag.Name)
-        }
+		if i+1 >= len(args) || args[i+1] == "--" || strings.HasPrefix(args[i+1], "-") {
+			return nil, fmt.Errorf("%w: %s", ErrMissingFlagValue, flag.Name)
+		}
 
-        i++
-        value := args[i]
-        parsed.flags = append(parsed.flags, parsedFlag{flag: flag, value: &value})
-    }
+		i++
+		value := args[i]
+		parsed.flags = append(parsed.flags, parsedFlag{flag: flag, value: &value})
+	}
 
-    return parsed, nil
+	return parsed, nil
 }
 
 func (c *Command) parseFlags(ctx *Context, args []string) error {
-	
 	if c == nil {
 		return ErrNilCommand
 	}
@@ -215,34 +234,31 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 }
 
 func (c *Command) applyParsed(ctx *Context, parsed *parsedInput) error {
-    if c == nil {
-        return ErrNilCommand
-    }
-    if ctx == nil {
-        return ErrNilContext
-    }
-    if parsed == nil {
-        return nil
-    }
-    if ctx.Values == nil {
-        ctx.Values = make(map[string]any)
-    }
+	if c == nil {
+		return ErrNilCommand
+	}
+	if ctx == nil {
+		return ErrNilContext
+	}
+	if parsed == nil {
+		return nil
+	}
 
-    ctx.Args = append(ctx.Args, parsed.args...)
+	ctx.Args = append(ctx.Args, parsed.args...)
 
-    for _, occurrence := range parsed.flags {
-        if occurrence.value == nil {
-            ctx.Values[occurrence.flag.Name] = true
-        } else {
-            ctx.Values[occurrence.flag.Name] = *occurrence.value
-        }
+	for _, occurrence := range parsed.flags {
+		if occurrence.value == nil {
+			ctx.Values[occurrence.flag.Name] = true
+		} else {
+			ctx.Values[occurrence.flag.Name] = *occurrence.value
+		}
 
-        if err := occurrence.flag.Execute(ctx); err != nil {
-            return fmt.Errorf("flag %q cannot be executed: %w", occurrence.flag.Name, err)
-        }
-    }
+		if err := occurrence.flag.Execute(ctx); err != nil {
+			return fmt.Errorf("flag %q cannot be executed: %w", occurrence.flag.Name, err)
+		}
+	}
 
-    return nil
+	return nil
 }
 
 // validCommandChecker checks if a given command is valid to work with argbins parser
@@ -280,14 +296,14 @@ func validFlagChecker(flag *Flag) error {
 		return fmt.Errorf("Flag name member can't be empty: %v", flag)
 	}
 
-    if flag.Short != "" {
-        if len(flag.Short) != 1 {
-            return fmt.Errorf("Flag short member must be one character: %v", flag)
-        }
-        if strings.Contains(flag.Short, "-") {
-            return fmt.Errorf("Flag short member cannot contain '-': %v", flag)
-        }
-    }
+	if flag.Short != "" {
+		if len(flag.Short) != 1 {
+			return fmt.Errorf("Flag short member must be one character: %v", flag)
+		}
+		if strings.Contains(flag.Short, "-") {
+			return fmt.Errorf("Flag short member cannot contain '-': %v", flag)
+		}
+	}
 
 	if flag.Description == "" {
 		return fmt.Errorf("Flag description member can't be empty: %v", flag)
@@ -301,7 +317,6 @@ func validFlagChecker(flag *Flag) error {
 }
 
 func (r *Root) AddCommand(command *Command) error {
-	
 	if r == nil {
 		return ErrNilRoot
 	}
@@ -309,7 +324,7 @@ func (r *Root) AddCommand(command *Command) error {
 	if err := validCommandChecker(command); err != nil {
 		return err
 	}
-	
+
 	if r.Commands == nil {
 		r.Commands = make(CommandList)
 	}
@@ -324,11 +339,10 @@ func (r *Root) AddCommand(command *Command) error {
 }
 
 func (c *Command) AddFlag(flag *Flag) error {
-
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	if err := validFlagChecker(flag); err != nil {
 		return err
 	}
@@ -337,35 +351,37 @@ func (c *Command) AddFlag(flag *Flag) error {
 		c.Flags = make(map[string]*Flag)
 	}
 
-	for takenFlag := range c.Flags {
-		if takenFlag == flag.Name {
-			return fmt.Errorf("Flag name: %s is already taken by %s", takenFlag, flag.Name)
+	for takenName, takenFlag := range c.Flags {
+		if takenName == flag.Name {
+			return fmt.Errorf("Flag name: %s is already taken by %s", takenName, flag.Name)
+		}
+		if flag.Short != "" && takenFlag != nil && takenFlag.Short == flag.Short {
+			return fmt.Errorf("Flag short: %s is already taken by %s", flag.Short, takenFlag.Name)
 		}
 	}
-	
+
 	c.Flags[flag.Name] = flag
 	return nil
 }
 
 func (r *Root) Run() error {
-
 	// Checks if Root is nil
 	if r == nil {
 		return ErrNilRoot
 	}
-	
+
 	// Validates root before fully executing to make sure the struct is valid
 	if err := r.validate(); err != nil {
 		return err
 	}
-	
+
 	// Users arguments
 	args := *utils.GetArgs()
-	
+
 	if len(args) == 0 {
 		return ErrMissingCommand
 	}
-	
+
 	command, ok := r.Commands[args[0]]
 	if !ok {
 		return fmt.Errorf("%w: %q", ErrUnknownCommand, args[0])
@@ -373,7 +389,7 @@ func (r *Root) Run() error {
 
 	ctx := &Context{
 		Command: command,
-		Values: make(map[string]any),
+		Values:  make(map[string]any),
 	}
 
 	if err := command.parseFlags(ctx, args[1:]); err != nil {
@@ -386,7 +402,3 @@ func (r *Root) Run() error {
 
 	return nil
 }
-
-
-
-
