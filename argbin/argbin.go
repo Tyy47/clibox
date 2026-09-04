@@ -3,6 +3,7 @@ package argbin
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Tyy47/clibox/internal/utils"
 )
@@ -34,6 +35,16 @@ type Context struct {
 	Command *Command
 	Values map[string]any
 	Args []string
+}
+
+type parsedFlag struct {
+	flag *Flag
+	value *string
+}
+
+type parsedInput struct {
+	flags []parsedFlag
+	args []string
 }
 
 // A collection of errors for argbin
@@ -81,6 +92,8 @@ func (c *Command) validate() error {
         return err
     }
 
+	shorts := make(map[string]string)
+
     for key, flag := range c.Flags {
         if err := validFlagChecker(flag); err != nil {
             return fmt.Errorf("flag %q: %w", key, err)
@@ -88,6 +101,12 @@ func (c *Command) validate() error {
         if key != flag.Name {
             return fmt.Errorf("flag key %q does not match flag name %q", key, flag.Name)
         }
+		if flag.Short != "" {
+			if existing, ok := shorts[flag.Short]; ok {
+                return fmt.Errorf("flag short %q is used by both %q and %q", flag.Short, existing, flag.Name)
+            }
+            shorts[flag.Short] = flag.Name
+		}
     }
     return nil
 }
@@ -102,6 +121,81 @@ func (c *Command) searchFlag(name string) (*Flag, bool) {
 	return flag, ok
 }
 
+func (c *Command) searchShortFlag(short string) (*Flag, bool) {
+	if c == nil {
+		return nil, false
+	}
+	
+	for _, flag := range c.Flags {
+		if flag == nil {
+			continue
+		}
+
+		if flag.Short == short {
+			return flag, true
+		}
+	}
+	
+	return nil, false
+}
+
+func (c *Command) parseInput(args []string) (*parsedInput, error) {
+    if c == nil {
+        return nil, ErrNilCommand
+    }
+
+    parsed := &parsedInput{}
+    seen := make(map[string]struct{})
+
+    for i := 0; i < len(args); i++ {
+        token := args[i]
+
+        if token == "--" {
+            parsed.args = append(parsed.args, args[i+1:]...)
+            break
+        }
+
+        if token == "" {
+            parsed.args = append(parsed.args, token)
+            continue
+        }
+
+        if token == "-" || !strings.HasPrefix(token, "-") {
+            parsed.args = append(parsed.args, token)
+            continue
+        }
+
+        if strings.Contains(token, "=") {
+            return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+        }
+
+        flag, err := c.resolveFlagToken(token)
+        if err != nil {
+            return nil, err
+        }
+
+        if _, ok := seen[flag.Name]; ok {
+            return nil, fmt.Errorf("%w: %s", ErrDuplicateFlag, flag.Name)
+        }
+        seen[flag.Name] = struct{}{}
+
+        if !flag.TakesValue {
+            parsed.flags = append(parsed.flags, parsedFlag{flag: flag})
+            continue
+        }
+
+        if i+1 >= len(args) || args[i+1] == "--" || strings.HasPrefix(args[i+1], "-") {
+            return nil, fmt.Errorf("%w: %s", ErrMissingFlagValue, flag.Name)
+        }
+
+        i++
+        value := args[i]
+        parsed.flags = append(parsed.flags, parsedFlag{flag: flag, value: &value})
+    }
+
+    return parsed, nil
+}
+
 func (c *Command) parseFlags(ctx *Context, args []string) error {
 	
 	if c == nil {
@@ -112,27 +206,43 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 		return ErrNilContext
 	}
 
-	for _, arg := range args {
-		flag, ok := c.searchFlag(arg)
-		if !ok {
-			return fmt.Errorf("%w: %s", ErrUnknownFlag, arg)
-		}
-
-		if err := validFlagChecker(flag); err != nil {
-			return err
-		}
-		
-		if flag.Execute == nil {
-			continue
-		}
-
-		if err := flag.Execute(ctx); err != nil {
-			return err
-		}
-
+	parsed, err := c.parseInput(args)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	return c.applyParsed(ctx, parsed)
+}
+
+func (c *Command) applyParsed(ctx *Context, parsed *parsedInput) error {
+    if c == nil {
+        return ErrNilCommand
+    }
+    if ctx == nil {
+        return ErrNilContext
+    }
+    if parsed == nil {
+        return nil
+    }
+    if ctx.Values == nil {
+        ctx.Values = make(map[string]any)
+    }
+
+    ctx.Args = append(ctx.Args, parsed.args...)
+
+    for _, occurrence := range parsed.flags {
+        if occurrence.value == nil {
+            ctx.Values[occurrence.flag.Name] = true
+        } else {
+            ctx.Values[occurrence.flag.Name] = *occurrence.value
+        }
+
+        if err := occurrence.flag.Execute(ctx); err != nil {
+            return fmt.Errorf("flag %q cannot be executed: %w", occurrence.flag.Name, err)
+        }
+    }
+
+    return nil
 }
 
 // validCommandChecker checks if a given command is valid to work with argbins parser
@@ -169,6 +279,15 @@ func validFlagChecker(flag *Flag) error {
 	if flag.Name == "" {
 		return fmt.Errorf("Flag name member can't be empty: %v", flag)
 	}
+
+    if flag.Short != "" {
+        if len(flag.Short) != 1 {
+            return fmt.Errorf("Flag short member must be one character: %v", flag)
+        }
+        if strings.Contains(flag.Short, "-") {
+            return fmt.Errorf("Flag short member cannot contain '-': %v", flag)
+        }
+    }
 
 	if flag.Description == "" {
 		return fmt.Errorf("Flag description member can't be empty: %v", flag)
