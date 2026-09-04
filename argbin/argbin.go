@@ -45,6 +45,8 @@ var (
 	ErrNilFlag = errors.New("flag cannot be nil")
 	ErrNilContext = errors.New("context cannot be nil")
 	ErrUnknownFlag = errors.New("unknown flag")
+    ErrDuplicateFlag    = errors.New("duplicate flag")
+    ErrMissingFlagValue = errors.New("missing flag value")
 )
 
 // Roots validation method
