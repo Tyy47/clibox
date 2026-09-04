@@ -27,7 +27,7 @@ No production code was changed during this review. Existing tests are intentiona
 
 These issues should be resolved before extending flag syntax because they prevent otherwise valid code from running reliably.
 
-## 1. Remove or correct `isItNil`
+## 1. Remove or correct `isItNil` - Fixed
 
 ### Current defect
 
@@ -87,7 +87,7 @@ if c == nil {
 - Nil errors remain classifiable through the existing sentinels.
 - Direct checks make static review straightforward and eliminate the double-negative logic.
 
-## 2. Never create and discard errors
+## 2. Never create and discard errors - Fixed
 
 ### Current defect
 
@@ -121,7 +121,7 @@ If lookup itself must distinguish malformed data from absence, change its signat
 - Lookup becomes a small constant-time operation.
 - The parser no longer conflates invalid configuration with a missing user-supplied flag.
 
-## 3. Guard nil `Context`
+## 3. Guard nil `Context` - Fixed
 
 ### Current defect
 
@@ -232,7 +232,7 @@ A nil map is safe to range over and can represent an empty collection. Initializ
 - Errors gain command/flag context while preserving wrapped sentinel causes.
 - `validCommandChecker` can eventually become the implementation of `Command.validate`, avoiding two overlapping validation APIs.
 
-## 5. Enforce one source of truth for names
+## 5. Enforce one source of truth for names - Explain this more in detail of what you mean
 
 ### Current defect
 
@@ -269,7 +269,7 @@ flag, ok := c.Flags[name]
 - Keeping both exported maps and exported names means runtime validation remains necessary.
 - Making maps private would enforce the invariant structurally, but that is a larger public API change and is not required for the first complete implementation.
 
-## 6. Normalize definition names
+## 6. Normalize definition names 
 
 A permanent syntax needs permanent naming rules. Without them, definitions can include whitespace, `=`, `--`, or other tokens that the parser cannot split safely.
 

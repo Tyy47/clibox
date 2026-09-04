@@ -41,16 +41,8 @@ var (
 	ErrNilRoot = errors.New("root cannot be nil")
 	ErrNilCommand = errors.New("command cannot be nil")
 	ErrNilFlag = errors.New("flag cannot be nil")
+	ErrNilContext = errors.New("context cannot be nil")
 )
-
-// Checks if Root, Command or a Flag is nil and returns a bool based on the answer
-func isItNil[T *Root | *Command | *Flag ](item T) bool {
-	if item == nil {
-		return true
-	} else {
-		return false
-	}
-}
 
 // Roots validation method
 func (r *Root) validate() error {
@@ -68,9 +60,9 @@ func (r *Root) validate() error {
 
 	// Validate users created key maps for commands to make sure names and keys match
 	for key, command := range r.Commands {
-		if command == nil {
-			return ErrNilCommand
-		}
+        if err := command.validate(); err != nil {
+            return fmt.Errorf("command %q: %w", key, err)
+        }
 		if key != command.Name {
 			return fmt.Errorf("command key %q does not match command name %q", key, command.Name)
 		}
@@ -79,19 +71,33 @@ func (r *Root) validate() error {
 	return nil
 }
 
+func (c *Command) validate() error {
+    if err := validCommandChecker(c); err != nil {
+        return err
+    }
+
+    for key, flag := range c.Flags {
+        if err := validFlagChecker(flag); err != nil {
+            return fmt.Errorf("flag %q: %w", key, err)
+        }
+        if key != flag.Name {
+            return fmt.Errorf("flag key %q does not match flag name %q", key, flag.Name)
+        }
+    }
+    return nil
+}
+
 func (c *Command) searchFlag(name string) (*Flag, bool) {
 	
-	if isItNil(c) {
-		fmt.Errorf(ErrNilCommand.Error())
+	if c == nil {
 		return nil, false
 	}
 
 	for key, flag := range c.Flags {
 		if flag == nil {
-			fmt.Errorf(ErrNilFlag.Error())
 			return nil, false
 		}
-
+		
 		if key == name || flag.Name == name {
 			return flag, true
 		}
@@ -103,12 +109,12 @@ func (c *Command) searchFlag(name string) (*Flag, bool) {
 
 func (c *Command) parseFlags(ctx *Context, args []string) error {
 	
-	if isItNil(c) {
+	if c == nil {
 		return ErrNilCommand
 	}
 
 	if ctx.Values == nil {
-		ctx.Values = make(map[string]any)
+		return ErrNilContext
 	}
 
 	for _, arg := range args {
@@ -182,7 +188,7 @@ func validFlagChecker(flag *Flag) error {
 
 func (r *Root) AddCommand(command *Command) error {
 	
-	if isItNil(r) {
+	if r == nil {
 		return ErrNilRoot
 	}
 
@@ -205,7 +211,7 @@ func (r *Root) AddCommand(command *Command) error {
 
 func (c *Command) AddFlag(flag *Flag) error {
 
-	if isItNil(c) {
+	if c == nil {
 		return ErrNilCommand
 	}
 	
