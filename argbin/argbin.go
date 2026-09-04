@@ -23,7 +23,8 @@ type Command struct {
 }
 
 type Flag struct {
-	Name string
+	Name string // logical name: "verbose"
+	Short string // optional short hand: "v"
 	Description string
 	Execute func(ctx *Context) error
 	TakesValue bool
@@ -32,6 +33,7 @@ type Flag struct {
 type Context struct {
 	Command *Command
 	Values map[string]any
+	Args []string
 }
 
 // A collection of errors for argbin
@@ -42,20 +44,21 @@ var (
 	ErrNilCommand = errors.New("command cannot be nil")
 	ErrNilFlag = errors.New("flag cannot be nil")
 	ErrNilContext = errors.New("context cannot be nil")
+	ErrUnknownFlag = errors.New("unknown flag")
 )
 
 // Roots validation method
 func (r *Root) validate() error {
+	if r == nil {
+		return ErrNilRoot
+	}
+
 	if r.AppName == "" {
 		return fmt.Errorf("root appname cannot be empty")
 	}
 
 	if r.Description == "" {
 		return fmt.Errorf("root description cannot be empty")
-	}
-
-	if r.Commands == nil {
-		r.Commands = make(CommandList)
 	}
 
 	// Validate users created key maps for commands to make sure names and keys match
@@ -93,18 +96,8 @@ func (c *Command) searchFlag(name string) (*Flag, bool) {
 		return nil, false
 	}
 
-	for key, flag := range c.Flags {
-		if flag == nil {
-			return nil, false
-		}
-		
-		if key == name || flag.Name == name {
-			return flag, true
-		}
-	}
-
-
-	return nil, false
+	flag, ok := c.Flags[name]
+	return flag, ok
 }
 
 func (c *Command) parseFlags(ctx *Context, args []string) error {
@@ -113,14 +106,14 @@ func (c *Command) parseFlags(ctx *Context, args []string) error {
 		return ErrNilCommand
 	}
 
-	if ctx.Values == nil {
+	if ctx == nil {
 		return ErrNilContext
 	}
 
 	for _, arg := range args {
 		flag, ok := c.searchFlag(arg)
 		if !ok {
-			continue
+			return fmt.Errorf("%w: %s", ErrUnknownFlag, arg)
 		}
 
 		if err := validFlagChecker(flag); err != nil {
