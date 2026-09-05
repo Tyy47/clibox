@@ -46,7 +46,7 @@ func TestCommandSearchShortFlag(t *testing.T) {
 	}
 }
 
-func TestCommandParseFlagsLongPresenceFlags(t *testing.T) {
+func TestCommandParseFlagsLongAndShortPresenceFlags(t *testing.T) {
 	var executed []string
 	command := &Command{Flags: map[string]*Flag{
 		"verbose": {
@@ -69,8 +69,8 @@ func TestCommandParseFlagsLongPresenceFlags(t *testing.T) {
 		},
 	}}
 
-	ctx := &Context{Command: command, Values: make(map[string]any)}
-	if err := command.parseFlags(ctx, []string{"--verbose", "--force"}); err != nil {
+	ctx := &Context{Command: command}
+	if err := command.parseFlags(ctx, []string{"--verbose", "-f"}); err != nil {
 		t.Fatalf("parseFlags() error = %v", err)
 	}
 
@@ -133,6 +133,17 @@ func TestCommandParseFlagsTakesValue(t *testing.T) {
 		t.Fatalf("callback value = %q, want file.txt", callbackValue)
 	}
 
+	ctx = &Context{}
+	callbackValue = ""
+	if err := command.parseFlags(ctx, []string{"-o", "short.txt"}); err != nil {
+		t.Fatalf("parseFlags() short value error = %v", err)
+	}
+	if got := ctx.Values["output"]; got != "short.txt" {
+		t.Fatalf("ctx.Values[output] = %#v, want short.txt", got)
+	}
+	if callbackValue != "short.txt" {
+		t.Fatalf("short callback value = %q, want short.txt", callbackValue)
+	}
 }
 
 func TestCommandParseFlagsErrors(t *testing.T) {
@@ -162,7 +173,7 @@ func TestCommandParseFlagsErrors(t *testing.T) {
 		{name: "grouped short unsupported", args: []string{"-vf"}, want: ErrUnknownFlag},
 		{name: "equals unsupported", args: []string{"--output=file.txt"}, want: ErrUnexpectedFlagValue},
 		{name: "duplicate long", args: []string{"--verbose", "--verbose"}, want: ErrDuplicateFlag},
-		{name: "short spelling unsupported", args: []string{"--verbose", "-v"}, want: ErrUnknownFlag},
+		{name: "duplicate long short", args: []string{"--verbose", "-v"}, want: ErrDuplicateFlag},
 		{name: "missing value", args: []string{"--output"}, want: ErrMissingFlagValue},
 		{name: "value is terminator", args: []string{"--output", "--"}, want: ErrMissingFlagValue},
 		{name: "value looks like flag", args: []string{"--output", "-x"}, want: ErrMissingFlagValue},
@@ -243,6 +254,10 @@ func TestValidCommandChecker(t *testing.T) {
 		{name: "nil command", commands: []*Command{nil}, wantErr: ErrNilCommand},
 		{name: "valid", commands: []*Command{{Name: "build", Description: "build it", Execute: validExecute}}},
 		{name: "missing name", commands: []*Command{{Description: "build it", Execute: validExecute}}, wantText: "name"},
+		{name: "leading dash", commands: []*Command{{Name: "-build", Description: "build it", Execute: validExecute}}, wantText: "name"},
+		{name: "equals in name", commands: []*Command{{Name: "build=all", Description: "build it", Execute: validExecute}}, wantText: "name"},
+		{name: "whitespace in name", commands: []*Command{{Name: "build all", Description: "build it", Execute: validExecute}}, wantText: "name"},
+		{name: "internal hyphen allowed", commands: []*Command{{Name: "dry-run", Description: "dry run", Execute: validExecute}}},
 		{name: "missing description", commands: []*Command{{Name: "build", Execute: validExecute}}, wantText: "description"},
 		{name: "missing execute", commands: []*Command{{Name: "build", Description: "build it"}}, wantText: "execute"},
 	}
@@ -280,6 +295,10 @@ func TestValidFlagChecker(t *testing.T) {
 		{name: "valid", flag: &Flag{Name: "force", Short: "f", Description: "force it", Execute: validExecute}},
 		{name: "nil flag", flag: nil, wantErr: ErrNilFlag},
 		{name: "missing name", flag: &Flag{Description: "force it", Execute: validExecute}, wantText: "name"},
+		{name: "leading dash in name", flag: &Flag{Name: "--force", Description: "force it", Execute: validExecute}, wantText: "logical name"},
+		{name: "equals in name", flag: &Flag{Name: "force=true", Description: "force it", Execute: validExecute}, wantText: "logical name"},
+		{name: "whitespace in name", flag: &Flag{Name: "force now", Description: "force it", Execute: validExecute}, wantText: "logical name"},
+		{name: "internal hyphen allowed", flag: &Flag{Name: "dry-run", Description: "dry run", Execute: validExecute}},
 		{name: "short too long", flag: &Flag{Name: "force", Short: "ff", Description: "force it", Execute: validExecute}, wantText: "short"},
 		{name: "short contains dash", flag: &Flag{Name: "force", Short: "-", Description: "force it", Execute: validExecute}, wantText: "short"},
 		{name: "missing description", flag: &Flag{Name: "force", Execute: validExecute}, wantText: "description"},
@@ -411,6 +430,12 @@ func TestCommandAddFlag(t *testing.T) {
 	if err := command.AddFlag(flag); err == nil {
 		t.Fatal("AddFlag() accepted a duplicate name")
 	}
+	if err := command.AddFlag(&Flag{Name: "version", Short: "v", Description: "show version", Execute: func(*Context) error { return nil }}); err == nil {
+		t.Fatal("AddFlag() accepted a duplicate short name")
+	}
+	if err := command.AddFlag(&Flag{Name: "--invalid", Description: "invalid logical name", Execute: func(*Context) error { return nil }}); err == nil {
+		t.Fatal("AddFlag() accepted a non-logical name")
+	}
 
 	invalid := &Flag{Name: "invalid", Description: "missing execute"}
 	if err := command.AddFlag(invalid); err == nil {
@@ -424,7 +449,7 @@ func TestCommandAddFlag(t *testing.T) {
 }
 
 func TestRootRunExecutesParsedFlagsThenCommand(t *testing.T) {
-	setTestArgs(t, "build", "input.go", "--output", "bin/app", "--verbose")
+	setTestArgs(t, "build", "input.go", "--output", "bin/app", "-v")
 
 	var events []string
 	command := &Command{Name: "build", Description: "build the project"}

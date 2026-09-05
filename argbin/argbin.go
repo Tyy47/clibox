@@ -99,9 +99,6 @@ func (c *Command) validate() error {
 		if err := validFlagChecker(flag); err != nil {
 			return fmt.Errorf("flag %q: %w", key, err)
 		}
-		if strings.HasPrefix(flag.Name, "-") || strings.Contains(flag.Name, "=") || strings.ContainsAny(flag.Name, " \t\n") {
-			return fmt.Errorf("Flag name must be a logical name without dashes, equals, or whitespace: %v", flag)
-		}
 		if key != flag.Name {
 			return fmt.Errorf("flag key %q does not match flag name %q", key, flag.Name)
 		}
@@ -150,6 +147,19 @@ func (c *Command) resolveFlagToken(token string) (*Flag, error) {
 		}
 
 		flag, ok := c.searchFlag(name)
+		if !ok {
+			return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+		}
+		return flag, nil
+	}
+
+	if strings.HasPrefix(token, "-") {
+		short := strings.TrimPrefix(token, "-")
+		if len(short) != 1 {
+			return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
+		}
+
+		flag, ok := c.searchShortFlag(short)
 		if !ok {
 			return nil, fmt.Errorf("%w: %q", ErrUnknownFlag, token)
 		}
@@ -243,6 +253,9 @@ func (c *Command) applyParsed(ctx *Context, parsed *parsedInput) error {
 	if parsed == nil {
 		return nil
 	}
+	if ctx.Values == nil {
+		ctx.Values = make(map[string]any)
+	}
 
 	ctx.Args = append(ctx.Args, parsed.args...)
 
@@ -274,6 +287,10 @@ func validCommandChecker(commands ...*Command) error {
 			return fmt.Errorf("Command name member can't be blank. Command: %v", single)
 		}
 
+		if strings.HasPrefix(single.Name, "-") || strings.Contains(single.Name, "=") || strings.ContainsAny(single.Name, " \t\n") {
+			return fmt.Errorf("Command name must not start with a dash or contain equals or whitespace: %v", single)
+		}
+
 		if single.Description == "" {
 			return fmt.Errorf("Command description member can't be blank. Command: %v", single)
 		}
@@ -294,6 +311,10 @@ func validFlagChecker(flag *Flag) error {
 
 	if flag.Name == "" {
 		return fmt.Errorf("Flag name member can't be empty: %v", flag)
+	}
+
+	if strings.HasPrefix(flag.Name, "-") || strings.Contains(flag.Name, "=") || strings.ContainsAny(flag.Name, " \t\n") {
+		return fmt.Errorf("Flag name must be a logical name without a leading dash, equals, or whitespace: %v", flag)
 	}
 
 	if flag.Short != "" {
