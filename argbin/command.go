@@ -3,6 +3,7 @@ package argbin
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -175,9 +176,19 @@ func (c *Command) parseFlags(args []string) ([]FlagFunction, []string, error) {
 	for _, arg := range args {
 		if value, ok := c.Flags[arg]; ok {
 			parsedOutput = append(parsedOutput, value)
-		} else {
-			unknownFlags = append(unknownFlags, arg)
+			continue
 		}
+
+		if !strings.HasPrefix(arg, "-") {
+			continue
+		}
+
+		_, err := strconv.ParseFloat(arg, 64)
+		if err == nil || errors.Is(err, strconv.ErrRange) {
+			continue
+		}
+
+		unknownFlags = append(unknownFlags, arg)
 	}
 
 	return parsedOutput, unknownFlags, nil

@@ -8,15 +8,18 @@ import (
 )
 
 var (
-
-	ErrNilContext = errors.New("context cannot be nil")
+	ErrNilContext       = errors.New("context cannot be nil")
 	ErrMissingArguments = errors.New("no arguments provided")
+	ErrUnknownCommand = errors.New("unknown command")
 )
 
 // Context is a list that can hold values for later use.
 type Context struct {
 	Command *Command
-	Values map[string]any
+	Values  map[string]any
+	Args []string
+	AdditionalArgs []string // Args that start from index 3 (length of 4)
+	ParsedValue string
 }
 
 func (c *Context) Validate() error {
@@ -25,7 +28,7 @@ func (c *Context) Validate() error {
 	}
 
 	if c.Command == nil {
-		return ErrNilCommand
+		c.Command = &Command{}
 	}
 
 	if c.Values == nil {
@@ -59,31 +62,51 @@ func (r *Root) Run() error {
 	}
 
 	args := *utils.GetArgs()
-	
-	var ctx = Context{
-		Values: make(map[string]any),
-	}
 
+	ctx := Context{
+		Values: make(map[string]any),
+		Args: args,
+		ParsedValue: "",
+	}
+	
 	if len(args) == 0 {
 		return ErrMissingArguments
 	}
 
 	for i, arg := range args {
 		cmd, err := r.parseCommand(&ctx, arg)
+
+		if cmd == nil {
+			continue
+		}
+
 		if err != nil {
 			return err
-		} else {
-			ctx.Command = cmd
 		}
 
 		if err := ctx.Validate(); err != nil {
 			return err
 		}
-		
+
 		if len(args) >= 2 {
 			if err := cmd.RunFlags(&ctx, args[i+1:]); err != nil {
 				return err
 			}
+		}
+
+
+		if cmd.TakesValue {
+			if i+1 >= len(args) {
+				return fmt.Errorf("command %v requires a value", cmd.Name)
+			}
+
+			ctx.ParsedValue = args[i+1]
+			ctx.AdditionalArgs = nil
+			if start := i + 3; start <= len(args) {
+				ctx.AdditionalArgs = args[start:]
+			}
+
+			i++
 		}
 
 		if err := cmd.Execute(&ctx); err != nil {
@@ -91,8 +114,6 @@ func (r *Root) Run() error {
 		} else {
 			return nil
 		}
-
 	}
-
-	return nil
+	return fmt.Errorf("%w: %s", ErrUnknownCommand, args[0])
 }

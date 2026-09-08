@@ -21,10 +21,26 @@ func TestContextValidate(t *testing.T) {
 		}
 	})
 
-	t.Run("nil command", func(t *testing.T) {
+	t.Run("initializes nil command and values", func(t *testing.T) {
 		ctx := &Context{}
-		if err := ctx.Validate(); !errors.Is(err, ErrNilCommand) {
-			t.Fatalf("Validate() error = %v, want %v", err, ErrNilCommand)
+		if err := ctx.Validate(); err != nil {
+			t.Fatalf("Validate() unexpected error: %v", err)
+		}
+		if ctx.Command == nil || ctx.Values == nil {
+			t.Fatal("Validate() did not initialize Command and Values")
+		}
+	})
+
+	t.Run("preserves existing context on repeated validation", func(t *testing.T) {
+		cmd := &Command{Name: "run"}
+		ctx := &Context{Command: cmd, Values: map[string]any{"enabled": true}, ParsedValue: "example"}
+		for range 2 {
+			if err := ctx.Validate(); err != nil {
+				t.Fatalf("Validate() unexpected error: %v", err)
+			}
+			if ctx.Command != cmd || ctx.Values["enabled"] != true || ctx.ParsedValue != "example" {
+				t.Fatalf("Validate() changed existing context: %#v", ctx)
+			}
 		}
 	})
 
@@ -73,7 +89,7 @@ func TestContextToggleValueSetsRequestedKey(t *testing.T) {
 func TestRootRun(t *testing.T) {
 	t.Run("missing arguments", func(t *testing.T) {
 		withArgs(t)
-		root := &Root{AppName: "app", AppVersion: "1.0.0", CommandList: []*Command{{Name: "run", Execute: func(*Context) error { return nil }}}}
+		root := &Root{AppName: "app", AppVersion: "1.0.0", Description: "test app", CommandList: []*Command{{Name: "run", Execute: func(*Context) error { return nil }}}}
 
 		if err := root.Run(); !errors.Is(err, ErrMissingArguments) {
 			t.Fatalf("Run() error = %v, want %v", err, ErrMissingArguments)
@@ -84,10 +100,11 @@ func TestRootRun(t *testing.T) {
 		withArgs(t, "run", "--verbose")
 		var executed bool
 		root := &Root{
-			AppName:    "app",
-			AppVersion: "1.0.0",
+			AppName:     "app",
+			AppVersion:  "1.0.0",
+			Description: "test app",
 			CommandList: []*Command{{
-				Name:  "run",
+				Name: "run",
 				Flags: Flags{"--verbose": func(ctx *Context) error {
 					ctx.Values["verbose"] = true
 					return nil
@@ -116,13 +133,13 @@ func TestRootRun(t *testing.T) {
 	t.Run("unknown command returns error without executing", func(t *testing.T) {
 		withArgs(t, "missing")
 		var executed bool
-		root := &Root{AppName: "app", AppVersion: "1.0.0", CommandList: []*Command{{Name: "run", Execute: func(*Context) error {
+		root := &Root{AppName: "app", AppVersion: "1.0.0", Description: "test app", CommandList: []*Command{{Name: "run", Execute: func(*Context) error {
 			executed = true
 			return nil
 		}}}}
 
-		if err := root.Run(); !errors.Is(err, ErrNoCommandFound) {
-			t.Fatalf("Run() error = %v, want %v", err, ErrNoCommandFound)
+		if err := root.Run(); !errors.Is(err, ErrUnknownCommand) {
+			t.Fatalf("Run() error = %v, want %v", err, ErrUnknownCommand)
 		}
 		if executed {
 			t.Fatal("Run() executed command despite unknown input")
@@ -132,7 +149,7 @@ func TestRootRun(t *testing.T) {
 	t.Run("returns validation errors before executing", func(t *testing.T) {
 		withArgs(t, "run")
 		var executed bool
-		root := &Root{AppVersion: "1.0.0", CommandList: []*Command{{Name: "run", Execute: func(*Context) error {
+		root := &Root{AppVersion: "1.0.0", Description: "test app", CommandList: []*Command{{Name: "run", Execute: func(*Context) error {
 			executed = true
 			return nil
 		}}}}

@@ -14,7 +14,6 @@ var (
 	ErrEmptyVersionNumber = errors.New("version number cannot be blank")
 	ErrEmptyCommandList = errors.New("command list cannot be empty")
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
-	ErrNoCommandFound = errors.New("command doesn't exist")
 	ErrNilCommandFunction = errors.New("command execute field cannot be nil")
 	ErrEmptyDescription = errors.New("description field cannot be empty")
 )
@@ -123,7 +122,7 @@ func (r *Root) GetCommandList() ([]*Command, error) {
 	}
 	
 	if r.CommandList == nil {
-		return nil, ErrEmptyCommandList
+		r.CommandList = make([]*Command, 0)
 	}
 
 	return r.CommandList, nil
@@ -148,7 +147,7 @@ func (r *Root) AddCommand(command *Command) error {
 	}
 
 	if r.CommandList == nil {
-		return ErrEmptyCommandList
+		r.CommandList = make([]*Command, 0)
 	}
 	
 	if err := command.validate(); err != nil {
@@ -221,9 +220,10 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 		}
 
 		if slices.Contains(cmd.AdditionalNames, arg) {
+			ctx.Command = cmd
 			return cmd, nil
 		}
 	}
 
-	return nil, fmt.Errorf("%s: %w", arg, ErrNoCommandFound)
+	return nil, nil
 }
