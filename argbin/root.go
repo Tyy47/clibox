@@ -25,6 +25,9 @@ type Root struct {
 	
 	// AppVersion stores the version of your application.
 	AppVersion string 
+
+	// Description is your Apps help menu.
+	Description string
 	
 	// CommandList stores all the requires commands for your application.
 	CommandList []*Command
@@ -83,6 +86,33 @@ func (r *Root) SetAppVersion(version string) error {
 		return nil
 	}
 	r.AppVersion = version
+	return nil
+}
+
+// GetDescription returns the Root's Description field alongside an error.
+func (r *Root) GetDescription() (string, error) {
+	if r == nil {
+		return "", ErrNilRoot
+	}
+
+	if r.Description == "" {
+		return "", fmt.Errorf("root description is empty")
+	}
+
+	return r.Description, nil
+}
+
+// SetDescription sets the Description field as des
+func (r *Root) SetDescription(des string) error {
+	if r == nil {
+		return ErrNilRoot
+	}
+
+	if des == "" {
+		return fmt.Errorf("des value cannot be blank when setting description")
+	}
+
+	r.Description = des
 	return nil
 }
 

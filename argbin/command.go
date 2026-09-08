@@ -19,6 +19,9 @@ type Command struct {
 	// Name of the command that'll be ran
 	Name string
 
+	// Description is your Command help menu
+	Description string
+
 	// Additional names is where aliases are stored for a command.
 	AdditionalNames []string
 
@@ -52,6 +55,31 @@ func (c *Command) SetName(name string) error {
 	}
 
 	c.Name = name
+	return nil
+}
+
+func (c *Command) GetDescription() (string, error) {
+	if c == nil {
+		return "", ErrNilCommand
+	}
+
+	if c.Description == "" {
+		return "", fmt.Errorf("command description cannot be blank")
+	}
+
+	return c.Description, nil
+}
+
+func (c *Command) SetDescription(des string) error {
+	if c == nil {
+		return ErrNilCommand
+	}
+
+	if des == "" {
+		return fmt.Errorf("des cannot be blank when setting description")
+	}
+	
+	c.Description = des
 	return nil
 }
 
