@@ -15,6 +15,7 @@ var (
 	ErrEmptyCommandList = errors.New("command list cannot be empty")
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
 	ErrNoCommandFound = errors.New("command doesn't exist")
+	ErrNilCommandFunction = errors.New("command execute field cannot be nil")
 )
 
 
@@ -118,9 +119,9 @@ func (r *Root) AddCommand(command *Command) error {
 	if r.CommandList == nil {
 		return ErrEmptyCommandList
 	}
-
-	if command == nil {
-		return ErrNilCommand
+	
+	if err := command.validate(); err != nil {
+		return err
 	}
 
 	for _, cmd := range r.CommandList {

@@ -36,8 +36,8 @@ func (c *Context) Validate() error {
 }
 
 func (ctx *Context) ToggleValue(key string, toggle bool) error {
-	if token, ok := ctx.Values[key].(string); ok {
-		ctx.Values[token] = toggle
+	if _, ok := ctx.Values[key].(string); ok || !ok {
+		ctx.Values[key] = toggle
 		return nil
 	} else {
 		return fmt.Errorf("%s doesn't exist in context values", key)
@@ -48,13 +48,15 @@ func (ctx *Context) GetValue(key string) (any, error) {
 	if token, ok := ctx.Values[key]; ok {
 		return token, nil
 	} else {
-		return fmt.Errorf("%s doesn't exist in context values", key), nil
+		return nil, fmt.Errorf("%s doesn't exist in context values", key)
 	}
 }
 
 // Run is the execution of your program with all combined commands.
 func (r *Root) Run() error {
-	r.validate()
+	if err := r.validate(); err != nil {
+		return err
+	}
 
 	args := *utils.GetArgs()
 	

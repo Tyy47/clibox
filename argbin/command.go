@@ -191,6 +191,10 @@ func (c *Command) validate() error {
 	if c.Name == "" {
 		return ErrEmptyCommandName
 	}
+
+	if c.Execute == nil {
+		return ErrNilCommandFunction
+	}
 	
 	return nil
 }
