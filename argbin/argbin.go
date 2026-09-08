@@ -67,7 +67,7 @@ func (r *Root) Run() error {
 	if len(args) == 0 {
 		return ErrMissingArguments
 	}
-	
+
 	for i, arg := range args {
 		cmd, err := r.parseCommand(&ctx, arg)
 		if err != nil {

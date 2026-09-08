@@ -16,6 +16,7 @@ var (
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
 	ErrNoCommandFound = errors.New("command doesn't exist")
 	ErrNilCommandFunction = errors.New("command execute field cannot be nil")
+	ErrEmptyDescription = errors.New("description field cannot be empty")
 )
 
 
@@ -176,6 +177,10 @@ func (r *Root) validate() error {
 
 	if r.AppVersion == "" {
 		return ErrEmptyVersionNumber
+	}
+
+	if r.Description == "" {
+		return ErrEmptyDescription
 	}
 
 	if r.CommandList == nil {
