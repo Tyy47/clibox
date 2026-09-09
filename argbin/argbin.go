@@ -137,7 +137,7 @@ func (r *Root) Run() error {
 
 		// If there is 2 or more arguments, it will parse flags.
 		if len(args) >= 2 {
-			if err := cmd.RunFlags(&ctx, args[i+1:]); err != nil {
+			if err := cmd.runFlags(&ctx, args[i+1:]); err != nil {
 				return err
 			}
 		}

@@ -273,7 +273,7 @@ func TestCommandRunFlags(t *testing.T) {
 				},
 				"--fail": func(*Context) error { calls++; return stop },
 			}}
-			err := c.RunFlags(ctx, tt.args)
+			err := c.runFlags(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %v, wantError = %v", err, tt.wantErr)
 			}
