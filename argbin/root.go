@@ -161,7 +161,7 @@ func (r *Root) SetCommandList(commandList []*Command) error {
 }
 
 // AddCommand takes in a Command pointer and adds it to the Roots CommandList
-func (r *Root) AddCommand(command *Command) error {
+func (r *Root) AddCommand(command ...*Command) error {
 
 	// Checks if the root object is nil
 	if r == nil {
@@ -173,20 +173,23 @@ func (r *Root) AddCommand(command *Command) error {
 		r.CommandList = make([]*Command, 0)
 	}
 	
-	// Validates the command
-	if err := command.validate(); err != nil {
-		return err
-	}
-	
-	// Searches command to make sure their is no duplicate names in list
-	for _, cmd := range r.CommandList {
-		if cmd.Name == command.Name {
-			return ErrDuplicateCommandName
+	// Validates the commands
+	for _, cmd := range command {
+		if err := cmd.validate(); err != nil {
+			return err
 		}
+
+		// Searches command to make sure their is no duplicate names in list
+		for _, prev := range r.CommandList {
+			if cmd.Name == prev.Name {
+				return ErrDuplicateCommandName
+			}
+		}
+
+		// Appends command to Roots CommandList
+		r.CommandList = append(r.CommandList, cmd)
 	}
 	
-	// Appends command to Roots CommandList
-	r.CommandList = append(r.CommandList, command)
 
 	return nil
 }
