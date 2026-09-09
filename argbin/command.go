@@ -18,7 +18,7 @@ type Command struct {
 	// Additional names is where aliases are stored for a command.
 	AdditionalNames []string
 
-	// Flags for Command are stored as k,v pairs as a string and a function.
+	// Flags for Command are stored as k,v pairs as a string and a Flag object.
 	Flags Flags
 
 	// TakesValue scans subsequent arguments to find a valid value.
@@ -28,7 +28,7 @@ type Command struct {
 	Execute func(ctx *Context) error 
 }
 
-type Flags map[string]FlagFunction
+type Flags map[string]*Flag
 
 // GetName returns the commands Name.
 func (c *Command) GetName() (string, error) {
@@ -197,8 +197,8 @@ func (c *Command) SetFlags(flags Flags) error {
 	return nil
 }
 
-// AddFlag adds a flag to c.Flags map. A Flag is consistant of a key as the identifier, and a flagFunction that stores the execution of the flag.
-func (c *Command) AddFlag(key string, flagFunction FlagFunction) error {
+// AddFlag adds a new flag to Commands Flag map. key is the identifier & name of a flag. flag is the Flag object that'll be stored as a value.
+func (c *Command) AddFlag(key string, flag *Flag) error {
 
 	// Checks if the command is nil
 	if c == nil {
@@ -211,8 +211,8 @@ func (c *Command) AddFlag(key string, flagFunction FlagFunction) error {
 	}
 	
 	// Checks if the flagFunction argument is empty
-	if flagFunction == nil {
-		return fmt.Errorf("flagFunction cannot be empty")
+	if flag == nil {
+		return fmt.Errorf("flag cannot be empty")
 	}
 	
 	// Checks if c.Flags is nil
@@ -221,15 +221,15 @@ func (c *Command) AddFlag(key string, flagFunction FlagFunction) error {
 	}
 
 	// Adds new flag to flag map
-	c.Flags[key] = flagFunction
+	c.Flags[key] = flag
 	return nil
 }
 
 // parseFlags reads through a commands Flags map and finds valid flags that are called through user arguments.
-func (c *Command) parseFlags(args []string) ([]FlagFunction, []string, error) {
+func (c *Command) parseFlags(args []string) ([]*Flag, []string, error) {
 	
 	// Stores all gathered flags from args
-	var parsedOutput []FlagFunction
+	var parsedOutput []*Flag
 
 	// Stores unknown flags that we're input
 	var unknownFlags []string
@@ -262,11 +262,11 @@ func (c *Command) parseFlags(args []string) ([]FlagFunction, []string, error) {
 }
 
 // executeFlags runs each flags related function. Valid flags are gathered from parseFlags().
-func (c *Command) executeFlags(ctx *Context, flags []FlagFunction) error {
+func (c *Command) executeFlags(ctx *Context, flags []*Flag) error {
 	// Loops over all flag functions
 	for _, single := range flags {
 		// Executes the flag function and errors out if it can't execute
-		if err := single(ctx); err != nil {
+		if err := single.Execute(ctx); err != nil {
 			return err
 		}
 	}
@@ -277,7 +277,7 @@ func (c *Command) executeFlags(ctx *Context, flags []FlagFunction) error {
 func (c *Command) runFlags(ctx *Context, args []string) error {
 
 	// Gather functions, unknown flags, and error
-	functions, unknown, err := c.parseFlags(args)
+	flags, unknown, err := c.parseFlags(args)
 	
 	// Error check for parseFlags
 	if err != nil {
@@ -290,7 +290,7 @@ func (c *Command) runFlags(ctx *Context, args []string) error {
 	}
 	
 	// Executes flags
-	if err := c.executeFlags(ctx, functions); err != nil {
+	if err := c.executeFlags(ctx, flags); err != nil {
 		return err
 	}
 

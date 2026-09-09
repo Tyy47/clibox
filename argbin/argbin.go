@@ -38,7 +38,8 @@ var (
 
 
 	// Flag Errors
-
+	ErrNillFlagName = errors.New("flag name field cannot be empty")
+	ErrNilFlagExecute = errors.New("flag execute field cannot be empty")
 	ErrNilFlags             = errors.New("flags cannot be nil")
 )
 
@@ -53,11 +54,11 @@ type Context struct {
 	// Args gathered from os.Args, starts at os.Args[1:].
 	Args []string
 
-	// AdditionalArgs that start from index 3 (length of 4).
-	AdditionalArgs []string
-
 	// Value that is gathered after a command. (e.g "appname" "command" "parsedvalue")
 	ParsedValue string
+
+	// Value that is gathered after a flag. (e.g "--output", "--port")
+	ParsedFlagValue string
 }
 
 // Validate checks if a context object is valid for processing, returns an error if it's not.
@@ -123,6 +124,7 @@ func (r *Root) Run() error {
 		Values:      make(map[string]any),
 		Args:        args,
 		ParsedValue: "",
+		ParsedFlagValue: "",
 	}
 
 	// Checks if the app execution is valid, if there is zero arguments, it returns an error.
@@ -165,9 +167,8 @@ func (r *Root) Run() error {
 			}
 
 			ctx.ParsedValue = args[i+1]
-			ctx.AdditionalArgs = nil
-			if start := i + 3; start <= len(args) {
-				ctx.AdditionalArgs = args[start:]
+			if index := i + 2; index <= len(args) {
+				ctx.ParsedFlagValue = args[index]
 			}
 
 			i++

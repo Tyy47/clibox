@@ -13,3 +13,15 @@ type Flag struct {
 
 
 type FlagFunction func(ctx *Context) error
+
+
+
+
+func (f *Flag) validate() error {
+
+	if f.Execute == nil {
+		return ErrNilFlagExecute
+	}
+
+	return nil
+}
