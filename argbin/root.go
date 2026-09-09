@@ -1,20 +1,8 @@
 package argbin
 
 import (
-	"errors"
 	"fmt"
 	"slices"
-)
-
-// Variable collection of root related errors
-var (
-	ErrNilRoot = errors.New("root cannot be nil")
-	ErrEmptyRootName = errors.New("appname cannot be blank")
-	ErrEmptyVersionNumber = errors.New("version number cannot be blank")
-	ErrEmptyCommandList = errors.New("command list cannot be empty")
-	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
-	ErrNilCommandFunction = errors.New("command execute field cannot be nil")
-	ErrEmptyDescription = errors.New("description field cannot be empty")
 )
 
 // Root is the application structure where all data is held.

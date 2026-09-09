@@ -7,14 +7,6 @@ import (
 	"strings"
 )
 
-var (
-	ErrNilCommand = errors.New("command cannot be nil")
-	ErrEmptyCommandName = errors.New("command name cannot be empty")
-	ErrNilArray = errors.New("array cannot be nil")
-	ErrNilMap = errors.New("map cannot be nil")
-	ErrNilFlags = errors.New("flags cannot be nil")
-)
-
 // Command is the storage where you'll input all of your command information.
 type Command struct {
 	// Name of the command that'll be ran
