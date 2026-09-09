@@ -29,7 +29,6 @@ type Command struct {
 }
 
 type Flags map[string]FlagFunction
-type FlagFunction func(ctx *Context) error
 
 // GetName returns the commands Name.
 func (c *Command) GetName() (string, error) {

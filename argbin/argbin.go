@@ -10,21 +10,36 @@ import (
 
 // Variable collection of root related errors
 var (
-	ErrNilContext           = errors.New("context cannot be nil")
-	ErrMissingArguments     = errors.New("no arguments provided")
-	ErrUnknownCommand       = errors.New("unknown command")
-	ErrNilCommand           = errors.New("command cannot be nil")
-	ErrEmptyCommandName     = errors.New("command name cannot be empty")
+	// Generic Errors
+
 	ErrNilArray             = errors.New("array cannot be nil")
 	ErrNilMap               = errors.New("map cannot be nil")
-	ErrNilFlags             = errors.New("flags cannot be nil")
+	ErrEmptyDescription     = errors.New("description field cannot be empty")
+	ErrNilCommand           = errors.New("command cannot be nil")
+	ErrMissingArguments     = errors.New("no arguments provided")
+	ErrUnknownCommand       = errors.New("unknown command")
+	ErrEmptyCommandName     = errors.New("command name cannot be empty")
+
+	// Context Errors
+
+	ErrNilContext           = errors.New("context cannot be nil")
+
+	// Root Errors
+
 	ErrNilRoot              = errors.New("root cannot be nil")
 	ErrEmptyRootName        = errors.New("appname cannot be blank")
 	ErrEmptyVersionNumber   = errors.New("version number cannot be blank")
 	ErrEmptyCommandList     = errors.New("command list cannot be empty")
-	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
+
+	// Command Errors
+
 	ErrNilCommandFunction   = errors.New("command execute field cannot be nil")
-	ErrEmptyDescription     = errors.New("description field cannot be empty")
+	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
+
+
+	// Flag Errors
+
+	ErrNilFlags             = errors.New("flags cannot be nil")
 )
 
 // Context is a list of data that can be used to store and access data.
