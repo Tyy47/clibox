@@ -1,3 +1,4 @@
+// Package argbin provides tools for defining CLI commands and flags, with built-in argument parsing.
 package argbin
 
 import (
