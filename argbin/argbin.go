@@ -4,6 +4,7 @@ package argbin
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Tyy47/clibox/internal/utils"
 )
@@ -84,6 +85,9 @@ func (c *Context) Validate() error {
 
 // ToggleValue switches values inside of Context.Values, returns an error if unable to make changes.
 func (ctx *Context) ToggleValue(key string, toggle bool) error {
+	if ctx == nil {
+		return ErrNilContext
+	}
 	// Checks if the given key is found inside of ctx.Values
 	if _, ok := ctx.Values[key].(string); ok {
 
@@ -99,6 +103,10 @@ func (ctx *Context) ToggleValue(key string, toggle bool) error {
 
 // GetValue retrieves a value from a given key, returns the value and an error if failed.
 func (ctx *Context) GetValue(key string) (any, error) {
+	if ctx == nil {
+		return nil, ErrNilContext
+	}
+
 	// Attempts to find a value based on the given key
 	if token, ok := ctx.Values[key]; ok {
 		// Returns the found value
@@ -107,6 +115,25 @@ func (ctx *Context) GetValue(key string) (any, error) {
 		// Returns an error if no value was found
 		return nil, fmt.Errorf("%s doesn't exist in context values", key)
 	}
+}
+
+//
+func (ctx *Context) gatherParsedValue(args []string) error {
+	if ctx == nil {
+		return ErrNilContext
+	}
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		} else {
+			ctx.ParsedValue = arg
+			break
+		}
+	}
+
+
+	return nil
 }
 
 // Run is the execution of your program with all combined commands.
@@ -165,10 +192,10 @@ func (r *Root) Run() error {
 			if i+1 >= len(args) {
 				return fmt.Errorf("command %v requires a value", cmd.Name)
 			}
-
-			ctx.ParsedValue = args[i+1]
-			if index := i + 2; index <= len(args) {
-				ctx.ParsedFlagValue = args[index]
+			
+			// Gathers immediate value after command
+			if err := ctx.gatherParsedValue(args[1:]); err != nil {
+				return err
 			}
 
 			i++

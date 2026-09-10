@@ -29,6 +29,10 @@ type Command struct {
 }
 
 type Flags map[string]*Flag
+type parsedFlag struct {
+	flag *Flag
+	value string
+}
 
 // GetName returns the commands Name.
 func (c *Command) GetName() (string, error) {
@@ -226,20 +230,44 @@ func (c *Command) AddFlag(key string, flag *Flag) error {
 }
 
 // parseFlags reads through a commands Flags map and finds valid flags that are called through user arguments.
-func (c *Command) parseFlags(args []string) ([]*Flag, []string, error) {
+func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
 	
 	// Stores all gathered flags from args
-	var parsedOutput []*Flag
+	var parsed []parsedFlag
 
 	// Stores unknown flags that we're input
 	var unknownFlags []string
 	
 	// Loops over each argument
-	for _, arg := range args {
+	for i, arg := range args {
 
 		// If a flag is found, it's added to parsedOutput
-		if value, ok := c.Flags[arg]; ok {
-			parsedOutput = append(parsedOutput, value)
+		if flag, ok := c.Flags[arg]; ok {
+
+			// Errors out if there is no flag
+			if flag == nil {
+				return nil, nil, fmt.Errorf("flag %s cannot be nil", arg)
+			}
+			
+			// Create flag for parsed flag array
+			entry := parsedFlag{flag: flag}
+	
+			// Checks if the flag takes in a value
+			if flag.TakesValue {
+				if i+1 >= len(args) {
+					// Returns an error if no value is given
+					return nil, nil, fmt.Errorf("flag %s requires a value", arg)
+				}
+				
+				// Increment and assign argument to flag value
+				i++
+				if !strings.HasPrefix(args[i], "-") {
+					entry.value = args[i]
+				}
+			}
+			
+			// Add parsed flag to parsed array
+			parsed = append(parsed, entry)
 			continue
 		}
 		
@@ -258,17 +286,26 @@ func (c *Command) parseFlags(args []string) ([]*Flag, []string, error) {
 		unknownFlags = append(unknownFlags, arg)
 	}
 	
-	return parsedOutput, unknownFlags, nil
+	return parsed, unknownFlags, nil
 }
 
 // executeFlags runs each flags related function. Valid flags are gathered from parseFlags().
-func (c *Command) executeFlags(ctx *Context, flags []*Flag) error {
-	// Loops over all flag functions
-	for _, single := range flags {
-		// Executes the flag function and errors out if it can't execute
-		if err := single.Execute(ctx); err != nil {
+func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) error {
+	// Loop through each parsed flag
+	for _, entry := range flags {
+		// Assign flag value to context
+		ctx.ParsedFlagValue = entry.value
+	
+		// Validate flag
+		if err := entry.flag.validate(); err != nil {
 			return err
 		}
+		
+		// Execute flag
+		if err := entry.flag.Execute(ctx); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -289,12 +326,7 @@ func (c *Command) runFlags(ctx *Context, args []string) error {
 		return fmt.Errorf("unknown arguments: %v", strings.Join(unknown, " "))
 	}
 	
-	// Executes flags
-	if err := c.executeFlags(ctx, flags); err != nil {
-		return err
-	}
-
-	return nil
+	return c.executeFlags(ctx, flags)
 }
 
 // validate checks if a Command is valid for argbin.
