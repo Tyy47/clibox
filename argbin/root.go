@@ -253,7 +253,7 @@ func (r *Root) validateCommandList() error {
 func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 	// Loop through each command in CommandList
 	for _, cmd := range r.CommandList {
-		
+
 		// Validates each command
 		if err := cmd.validate(); err != nil {
 			return nil, err
