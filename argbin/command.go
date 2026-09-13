@@ -26,6 +26,9 @@ type Command struct {
 
 	// Execute runs the commands given function.
 	Execute func(ctx *Context) error 
+
+	// Subcommands stores commands for branching commands
+	Subcommands []*Command
 }
 
 type Flags map[string]*Flag

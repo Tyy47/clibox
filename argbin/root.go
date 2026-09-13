@@ -272,6 +272,6 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 		}
 	}
 	
-	// Returns nil of no commands are found.
+	// Returns nil if no commands are found.
 	return nil, nil
 }

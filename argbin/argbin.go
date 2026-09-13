@@ -13,35 +13,34 @@ import (
 var (
 	// Generic Errors
 
-	ErrNilArray             = errors.New("array cannot be nil")
-	ErrNilMap               = errors.New("map cannot be nil")
-	ErrEmptyDescription     = errors.New("description field cannot be empty")
-	ErrNilCommand           = errors.New("command cannot be nil")
-	ErrMissingArguments     = errors.New("no arguments provided")
-	ErrUnknownCommand       = errors.New("unknown command")
-	ErrEmptyCommandName     = errors.New("command name cannot be empty")
+	ErrNilArray         = errors.New("array cannot be nil")
+	ErrNilMap           = errors.New("map cannot be nil")
+	ErrEmptyDescription = errors.New("description field cannot be empty")
+	ErrNilCommand       = errors.New("command cannot be nil")
+	ErrMissingArguments = errors.New("no arguments provided")
+	ErrUnknownCommand   = errors.New("unknown command")
+	ErrEmptyCommandName = errors.New("command name cannot be empty")
 
 	// Context Errors
 
-	ErrNilContext           = errors.New("context cannot be nil")
+	ErrNilContext = errors.New("context cannot be nil")
 
 	// Root Errors
 
-	ErrNilRoot              = errors.New("root cannot be nil")
-	ErrEmptyRootName        = errors.New("appname cannot be blank")
-	ErrEmptyVersionNumber   = errors.New("version number cannot be blank")
-	ErrEmptyCommandList     = errors.New("command list cannot be empty")
+	ErrNilRoot            = errors.New("root cannot be nil")
+	ErrEmptyRootName      = errors.New("appname cannot be blank")
+	ErrEmptyVersionNumber = errors.New("version number cannot be blank")
+	ErrEmptyCommandList   = errors.New("command list cannot be empty")
 
 	// Command Errors
 
 	ErrNilCommandFunction   = errors.New("command execute field cannot be nil")
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
 
-
 	// Flag Errors
-	ErrNillFlagName = errors.New("flag name field cannot be empty")
+	ErrNillFlagName   = errors.New("flag name field cannot be empty")
 	ErrNilFlagExecute = errors.New("flag execute field cannot be empty")
-	ErrNilFlags             = errors.New("flags cannot be nil")
+	ErrNilFlags       = errors.New("flags cannot be nil")
 )
 
 // Context is a list of data that can be used to store and access data.
@@ -117,7 +116,6 @@ func (ctx *Context) GetValue(key string) (any, error) {
 	}
 }
 
-//
 func (ctx *Context) gatherParsedValue(args []string) error {
 	if ctx == nil {
 		return ErrNilContext
@@ -131,7 +129,6 @@ func (ctx *Context) gatherParsedValue(args []string) error {
 			break
 		}
 	}
-
 
 	return nil
 }
@@ -148,9 +145,9 @@ func (r *Root) Run() error {
 
 	// Creates the context object to store user data.
 	ctx := Context{
-		Values:      make(map[string]any),
-		Args:        args,
-		ParsedValue: "",
+		Values:          make(map[string]any),
+		Args:            args,
+		ParsedValue:     "",
 		ParsedFlagValue: "",
 	}
 
@@ -192,7 +189,7 @@ func (r *Root) Run() error {
 			if i+1 >= len(args) {
 				return fmt.Errorf("command %v requires a value", cmd.Name)
 			}
-			
+
 			// Gathers immediate value after command
 			if err := ctx.gatherParsedValue(args[1:]); err != nil {
 				return err
