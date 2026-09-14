@@ -346,42 +346,54 @@ func (c *Command) validate() error {
 	return nil
 }
 
+// parseSubcommand finds a subcommand based on the given args. Returns the subcommand if found, if not, it'll return the original command and an error.
 func (c *Command) parseSubcommand(args []string, ctx *Context) (*Command, error) {
+	// Check to see if the command is valid
 	if err := c.validate(); err != nil {
 		return nil, err
 	}
 
+	// Checks if a command is a retainer for Subcommands
 	if len(args) == 0 || len(c.Subcommands) == 0 {
 		return c, nil
 	}
 
+	// Loop over each subcommand stored in a Command
 	for _, child := range c.Subcommands {
+		// Checks if a subcommand is nil
 		if child == nil {
 			return nil, ErrNilCommand
 		}
-
+		
+		// Checks if an arg is a subcommand
 		if child.Name == args[0] || slices.Contains(child.AdditionalNames, args[0]) {
 			// Matched a child; recurse with the remaining arguments.
 			if err := child.validate(); err != nil {
 				return nil, err
 			}
+			// Increment argument count for later incrementing arguments
 			ctx.argCount += 1
 			return child.parseSubcommand(args[1:], ctx)
 		}
 	}
-
+	
+	// Returns the original command and an unknown subcommand error
 	return c, fmt.Errorf("%w %s", ErrUnknownSubcommand, args[0])
 }
 
+// checkSubcommands checks if a given subcommand is valid. If it is valid, it will return the subcommand, if not, it will return the original command.
 func checkSubcommands(cmd *Command, ctx *Context) (*Command, error) {
+	// Check to see if given command is valid
 	if err := cmd.validate(); err != nil {
 		return nil, err
 	}
 
+	// Checks if a command execution is nil
 	if cmd.Execute != nil {
 		return cmd, nil
 	}
 
+	// Checks if a given command is a retainer for more subcommands
 	if cmd.Subcommands != nil || len(cmd.Subcommands) >= 1 {
 		subCmd, err := cmd.parseSubcommand(ctx.Args[1:], ctx)
 		if err != nil {
@@ -395,19 +407,24 @@ func checkSubcommands(cmd *Command, ctx *Context) (*Command, error) {
 	return cmd, nil
 }
 
+// validateSubCommand checks if the given subCmd is a valid command that can be ran through argbin.
 func validateSubCommand(subCmd *Command) error {
+	// Checks if the cmd is nil
 	if subCmd == nil {
 		return ErrNilCommand
 	}
-
+	
+	// Runs internal validate to check if the command is valid
 	if err := subCmd.validate(); err != nil {
 		return err
 	}
-
+	
+	// If the command has subcommands, it'll return an error stating the command is missing arguments through ErrSubcommandMissingArgs.
 	if len(subCmd.Subcommands) >= 1 {
 		return fmt.Errorf("%s %w", subCmd.Name, ErrSubcommandMissingArgs)
 	}
-
+	
+	// Internal marker to track subcommands
 	subCmd.isSubcommand = true
 
 	return nil

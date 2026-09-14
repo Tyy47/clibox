@@ -25,26 +25,31 @@ var (
 	ErrEmptyArgument     = errors.New("argument cannot be empty")
 
 	// Context Errors
+
 	ErrNilContext          = errors.New("context cannot be nil")
 	ErrMissingContextValue = errors.New("doesn't exist in context values")
 
 	// Root Errors
+
 	ErrNilRoot            = errors.New("root cannot be nil")
 	ErrEmptyRootName      = errors.New("appname cannot be blank")
 	ErrEmptyVersionNumber = errors.New("version number cannot be blank")
 	ErrEmptyCommandList   = errors.New("command list cannot be empty")
 
 	// Command Errors
+
 	ErrNilCommandFunction   = errors.New("command execute field or subcommands list cannot be nil")
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
 	ErrRequiresInput        = errors.New("command requires input")
 	ErrEmptyAliasList       = errors.New("cannot get empty additional names list")
 
 	// Subcommand errors
+
 	ErrSubcommandMissingExecute = errors.New("subcommand is missing execute function")
 	ErrSubcommandMissingArgs    = errors.New("subcommand is missing required arguments")
 
 	// Flag Errors
+
 	ErrNillFlagName   = errors.New("flag name field cannot be empty")
 	ErrNilFlagExecute = errors.New("flag execute field cannot be empty")
 	ErrNilFlag        = errors.New("flag cannot be nil")
@@ -128,15 +133,19 @@ func (ctx *Context) GetValue(key string) (any, error) {
 	}
 }
 
+// gatherParsedValue gets the immediate value after a command and stores it in ctx.ParsedValue.
 func (ctx *Context) gatherParsedValue(args []string, cmd *Command) error {
+	// Context nil check
 	if ctx == nil {
 		return ErrNilContext
 	}
-
+	
+	// Checks if an argument was given or not, returns an error if not.
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
 	}
-
+	
+	// Assigns ParsedValue to the next arg
 	ctx.ParsedValue = args[0]
 	return nil
 }
@@ -197,7 +206,8 @@ func (r *Root) Run() error {
 		if cmd.TakesValue {
 			// starting point for indexing
 			start := i + ctx.argCount + 1
-
+			
+			// Check to see if the starting point is greater or equal to arguments length
 			if start >= len(args) {
 				return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
 			}
@@ -210,12 +220,15 @@ func (r *Root) Run() error {
 			i += ctx.argCount
 			i++
 		}
-
+		
+		// Checks if the cmd execute is nil
 		if cmd.Execute == nil {
+			// Returns error that the subcommand is missing the execute field
 			if cmd.isSubcommand {
 				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingExecute)
 			}
-
+			
+			// Returns an error if a subcommand is missing arguments
 			if len(cmd.Subcommands) >= 1 {
 				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingArgs)
 			}
