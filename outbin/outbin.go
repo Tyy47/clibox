@@ -2,12 +2,16 @@ package outbin
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/Tyy47/clibox/colorbin"
 )
 
 type ColorOption int
 
 type Output struct {
+	Stdout io.Writer
+	Stderr io.Writer
 	ColorMode ColorOption
 }
 
@@ -17,8 +21,11 @@ const (
 	ColorON
 )
 
-func NewOutput() *Output {
-	return &Output{}
+func NewOutput(out io.Writer, err io.Writer) *Output {
+	return &Output{
+		Stdout: out,
+		Stderr: err,
+	}
 }
 
 func (o *Output) Success(msg any) {
@@ -28,7 +35,7 @@ func (o *Output) Success(msg any) {
 		label = colorbin.Green("success").ToHighIntensityBold()
 	}
 
-	fmt.Printf("%s: %v\n", label, msg)
+	fmt.Fprintf(o.Stdout, "%s: %v\n", label, msg)
 }
 
 func (o *Output) Successf(format string, args ...any) {
@@ -42,7 +49,7 @@ func (o *Output) Successf(format string, args ...any) {
 	msgs = append(msgs, label)
 	msgs = append(msgs, args...)
 
-	fmt.Printf("%s: "+format+"\n", msgs...)
+	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
 }
 
 func (o *Output) Error(msg any) {
@@ -52,7 +59,7 @@ func (o *Output) Error(msg any) {
 		label = colorbin.Red("error").ToHighIntensityBold()
 	}
 
-	fmt.Printf("%s: %v\n", label, msg)
+	fmt.Fprintf(o.Stdout, "%s: %v\n", label, msg)
 }
 
 
@@ -67,5 +74,30 @@ func (o *Output) Errorf(format string, args ...any) {
 	msgs = append(msgs, label)
 	msgs = append(msgs, args...)
 
-	fmt.Printf("%s: "+format+"\n", msgs...)
+	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
+}
+
+func (o *Output) Info(msg any) {
+	label := any("info")
+
+	if o.ColorMode == ColorON || o.ColorMode == ColorAuto {
+		label = colorbin.Cyan("info").ToHighIntensityBold()
+	}
+
+	fmt.Fprintf(o.Stdout, "%s: %v\n", label, msg)
+}
+
+
+func (o *Output) Infof(format string, args ...any) {
+	label := any("info")
+
+	if o.ColorMode == ColorON || o.ColorMode == ColorAuto {
+		label = colorbin.Cyan("info").ToHighIntensityBold()
+	}
+
+	msgs := make([]any, 0, len(args)+1)
+	msgs = append(msgs, label)
+	msgs = append(msgs, args...)
+
+	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
 }
