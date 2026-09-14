@@ -12,7 +12,7 @@ func TestCommandParseSubcommandRecursesToDeepestMatch(t *testing.T) {
 	middle := &Command{Name: "middle", Subcommands: []*Command{leaf}}
 	parent := &Command{Name: "parent", Subcommands: []*Command{middle}}
 
-	got, err := parent.parseSubcommand([]string{"middle", "leaf"})
+	got, err := parent.parseSubcommand([]string{"middle", "leaf"}, &Context{})
 	if err != nil {
 		t.Fatalf("parseSubcommand returned an error: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestCommandParseSubcommandMatchesAliases(t *testing.T) {
 	}
 	parent := &Command{Name: "app", Subcommands: []*Command{child}}
 
-	got, err := parent.parseSubcommand([]string{"d"})
+	got, err := parent.parseSubcommand([]string{"d"}, &Context{})
 	if err != nil {
 		t.Fatalf("parseSubcommand returned an error: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestCommandParseSubcommandMatchesAliases(t *testing.T) {
 func TestCommandParseSubcommandStopsAtCurrentCommand(t *testing.T) {
 	parent := &Command{Name: "app", Subcommands: []*Command{{Name: "child", Execute: noopCommand}}}
 
-	got, err := parent.parseSubcommand(nil)
+	got, err := parent.parseSubcommand(nil, &Context{})
 	if err != nil {
 		t.Fatalf("parseSubcommand returned an error: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestCommandParseSubcommandRejectsInvalidInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tt.cmd.parseSubcommand(tt.args)
+			_, err := tt.cmd.parseSubcommand(tt.args, &Context{})
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("parseSubcommand error = %v, want %v", err, tt.want)
 			}
@@ -85,7 +85,7 @@ func TestCommandParseSubcommandRejectsInvalidInput(t *testing.T) {
 func TestCommandParseSubcommandRejectsUnknownSubcommand(t *testing.T) {
 	parent := &Command{Name: "app", Subcommands: []*Command{{Name: "known", Execute: noopCommand}}}
 
-	got, err := parent.parseSubcommand([]string{"unknown"})
+	got, err := parent.parseSubcommand([]string{"unknown"}, &Context{})
 	if err == nil {
 		t.Fatalf("parseSubcommand returned (%q, nil) for an unknown subcommand; want an error", got.Name)
 	}

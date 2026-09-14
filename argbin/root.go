@@ -9,20 +9,19 @@ import (
 type Root struct {
 	// AppName stores the name of your application.
 	AppName string
-	
+
 	// AppVersion stores the version of your application.
-	AppVersion string 
+	AppVersion string
 
 	// Description is your Apps help menu.
 	Description string
-	
+
 	// CommandList stores all the requires commands for your application.
 	CommandList []*Command
 }
 
 // GetAppName returns the name of the application.
 func (r *Root) GetAppName() (string, error) {
-
 	// Checks if the root object is nil
 	if r == nil {
 		return "", ErrNilRoot
@@ -30,7 +29,7 @@ func (r *Root) GetAppName() (string, error) {
 
 	// Checks if the appname is empty, if so, returns an error.
 	if r.AppName == "" {
-		return "", fmt.Errorf("cannot get empty app name")
+		return "", ErrEmptyRootName
 	}
 
 	// Returns the app name
@@ -39,7 +38,6 @@ func (r *Root) GetAppName() (string, error) {
 
 // SetAppName sets the name of the application.
 func (r *Root) SetAppName(name string) error {
-
 	// Checks if the root object is nil
 	if r == nil {
 		return ErrNilRoot
@@ -47,9 +45,9 @@ func (r *Root) SetAppName(name string) error {
 
 	// Check if the given name is blank
 	if name == "" {
-		return fmt.Errorf("name cannot be empty when setting app name.")
+		return fmt.Errorf("name %w", ErrEmptyArgument)
 	}
-	
+
 	// Sets app name to given name argument
 	r.AppName = name
 	return nil
@@ -57,7 +55,6 @@ func (r *Root) SetAppName(name string) error {
 
 // GetAppVersion returns the version of the application.
 func (r *Root) GetAppVersion() (string, error) {
-
 	// Checks if root is nil
 	if r == nil {
 		return "", ErrNilRoot
@@ -65,7 +62,7 @@ func (r *Root) GetAppVersion() (string, error) {
 
 	// Checks if the app version is blank
 	if r.AppVersion == "" {
-		return "", fmt.Errorf("cannot get empty app version")
+		return "", ErrEmptyVersionNumber
 	}
 
 	// Returns the app version
@@ -74,7 +71,6 @@ func (r *Root) GetAppVersion() (string, error) {
 
 // SetAppVersion sets the version of the application.
 func (r *Root) SetAppVersion(version string) error {
-
 	// Checks if root is nil
 	if r == nil {
 		return ErrNilRoot
@@ -82,9 +78,9 @@ func (r *Root) SetAppVersion(version string) error {
 
 	// Checks if the version argument is empty
 	if version == "" {
-		return fmt.Errorf("version number cannot be set to empty string")
+		return fmt.Errorf("version %w", ErrEmptyArgument)
 	}
-	
+
 	// Assigns version to AppVersion
 	r.AppVersion = version
 	return nil
@@ -92,24 +88,22 @@ func (r *Root) SetAppVersion(version string) error {
 
 // GetDescription returns the Root's Description field alongside an error.
 func (r *Root) GetDescription() (string, error) {
-
 	// Checks if root is nil
 	if r == nil {
 		return "", ErrNilRoot
 	}
-	
+
 	// Returns an error if roots Description is empty
 	if r.Description == "" {
-		return "", fmt.Errorf("root description is empty")
+		return "", fmt.Errorf("root %w", ErrEmptyDescription)
 	}
-	
+
 	// Returns the apps Description
 	return r.Description, nil
 }
 
 // SetDescription sets the Description field as des
 func (r *Root) SetDescription(des string) error {
-
 	// Checks if root is nil
 	if r == nil {
 		return ErrNilRoot
@@ -117,9 +111,9 @@ func (r *Root) SetDescription(des string) error {
 
 	// Checks if the des argument is empty
 	if des == "" {
-		return fmt.Errorf("des value cannot be blank when setting description")
+		return fmt.Errorf("des %w", ErrEmptyArgument)
 	}
-	
+
 	// Sets the roots Description to des
 	r.Description = des
 	return nil
@@ -127,29 +121,27 @@ func (r *Root) SetDescription(des string) error {
 
 // GetCommandList returns the Roots CommandList field
 func (r *Root) GetCommandList() ([]*Command, error) {
-
 	// Checks if root is nil
 	if r == nil {
 		return nil, ErrNilRoot
 	}
-	
+
 	// Checks if the CommandList is nil, if so, it'll create an empty *Command array.
 	if r.CommandList == nil {
 		r.CommandList = make([]*Command, 0)
 	}
-	
+
 	// Returns the roots CommandList
 	return r.CommandList, nil
 }
 
-// SetCommandList takes an array of Command pointers and assigns it to r.CommandList. 
+// SetCommandList takes an array of Command pointers and assigns it to r.CommandList.
 func (r *Root) SetCommandList(commandList []*Command) error {
-
 	// Checks if root is nil
 	if r == nil {
 		return ErrNilRoot
 	}
-	
+
 	// Checks if the commandList argument is empty
 	if len(commandList) == 0 {
 		return ErrEmptyCommandList
@@ -162,7 +154,6 @@ func (r *Root) SetCommandList(commandList []*Command) error {
 
 // AddCommand takes in a Command pointer and adds it to the Roots CommandList
 func (r *Root) AddCommand(command ...*Command) error {
-
 	// Checks if the root object is nil
 	if r == nil {
 		return ErrNilRoot
@@ -172,7 +163,7 @@ func (r *Root) AddCommand(command ...*Command) error {
 	if r.CommandList == nil {
 		r.CommandList = make([]*Command, 0)
 	}
-	
+
 	// Validates the commands
 	for _, cmd := range command {
 		if err := cmd.validate(); err != nil {
@@ -189,14 +180,12 @@ func (r *Root) AddCommand(command ...*Command) error {
 		// Appends command to Roots CommandList
 		r.CommandList = append(r.CommandList, cmd)
 	}
-	
 
 	return nil
 }
 
 // validate checks if a Root object is valid for argbin
 func (r *Root) validate() error {
-
 	// Checks if root is nil
 	if r == nil {
 		return ErrNilRoot
@@ -205,11 +194,6 @@ func (r *Root) validate() error {
 	// Checks if AppName is nil
 	if r.AppName == "" {
 		return ErrEmptyRootName
-	}
-
-	// Checks if AppVersion is nil
-	if r.AppVersion == "" {
-		return ErrEmptyVersionNumber
 	}
 
 	// Checks if Description is nil
@@ -239,7 +223,7 @@ func (r *Root) validateCommandList() error {
 		if cmd == nil {
 			return ErrNilCommand
 		}
-		
+
 		// Validates the singular command
 		if err := cmd.validate(); err != nil {
 			return err
@@ -258,8 +242,6 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 			return nil, err
 		}
 
-
-		
 		// Checks if the command name is equal to the given arg
 		if cmd.Name == arg {
 			// Parses subcommands if they exist
@@ -268,14 +250,14 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 				return cmd, err
 			}
 
-			if err := validateSubCommand(subCmd); err == nil {
+			if err := validateSubCommand(subCmd); err != nil {
+				ctx.Command = cmd
+				return cmd, err
+			} else {
 				subCmd.isSubcommand = true
 				ctx.Command = subCmd
 				return subCmd, nil
 			}
-
-			ctx.Command = cmd
-			return cmd, nil
 		}
 
 		// Checks command aliases to see if given arg is a command
@@ -286,18 +268,17 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 				return cmd, err
 			}
 
-			if err := validateSubCommand(subCmd); err == nil {
+			if err := validateSubCommand(subCmd); err != nil {
+				ctx.Command = cmd
+				return cmd, err
+			} else {
 				subCmd.isSubcommand = true
 				ctx.Command = subCmd
 				return subCmd, nil
 			}
-
-			ctx.Command = cmd
-			return cmd, nil
 		}
 	}
-	
+
 	// Returns nil if no commands are found.
 	return nil, nil
 }
-

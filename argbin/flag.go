@@ -1,8 +1,5 @@
 package argbin
 
-
-
-
 type Flag struct {
 	// Execute runs the flags given function
 	Execute FlagFunction
@@ -11,14 +8,9 @@ type Flag struct {
 	TakesValue bool
 }
 
-
 type FlagFunction func(ctx *Context) error
 
-
-
-
 func (f *Flag) validate() error {
-
 	if f.Execute == nil {
 		return ErrNilFlagExecute
 	}
