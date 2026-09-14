@@ -253,20 +253,45 @@ func (r *Root) validateCommandList() error {
 func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 	// Loop through each command in CommandList
 	for _, cmd := range r.CommandList {
-
 		// Validates each command
 		if err := cmd.validate(); err != nil {
 			return nil, err
 		}
+
+
 		
 		// Checks if the command name is equal to the given arg
 		if cmd.Name == arg {
+			// Parses subcommands if they exist
+			subCmd, err := checkSubcommands(cmd, ctx)
+			if err != nil {
+				return cmd, err
+			}
+
+			if err := validateSubCommand(subCmd); err == nil {
+				subCmd.isSubcommand = true
+				ctx.Command = subCmd
+				return subCmd, nil
+			}
+
 			ctx.Command = cmd
 			return cmd, nil
 		}
 
 		// Checks command aliases to see if given arg is a command
 		if slices.Contains(cmd.AdditionalNames, arg) {
+			// Parses subcommands if they exist
+			subCmd, err := checkSubcommands(cmd, ctx)
+			if err != nil {
+				return cmd, err
+			}
+
+			if err := validateSubCommand(subCmd); err == nil {
+				subCmd.isSubcommand = true
+				ctx.Command = subCmd
+				return subCmd, nil
+			}
+
 			ctx.Command = cmd
 			return cmd, nil
 		}
@@ -275,3 +300,4 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 	// Returns nil if no commands are found.
 	return nil, nil
 }
+

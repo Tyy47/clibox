@@ -3,6 +3,7 @@ package argbin
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -25,26 +26,30 @@ type Command struct {
 	TakesValue bool
 
 	// Execute runs the commands given function.
-	Execute func(ctx *Context) error 
+	Execute func(ctx *Context) error
 
 	// Subcommands stores commands for branching commands
 	Subcommands []*Command
+
+	// isSubcommand is an internal field to mark if this command is a subcommand
+	isSubcommand bool
 }
 
-type Flags map[string]*Flag
-type parsedFlag struct {
-	flag *Flag
-	value string
-}
+type (
+	Flags      map[string]*Flag
+	parsedFlag struct {
+		flag  *Flag
+		value string
+	}
+)
 
 // GetName returns the commands Name.
 func (c *Command) GetName() (string, error) {
-
 	// Checks if the command is nil
 	if c == nil {
 		return "", ErrNilCommand
 	}
-	
+
 	// Checks if the Name is empty
 	if c.Name == "" {
 		return "", fmt.Errorf("cannot get empty command name")
@@ -56,12 +61,11 @@ func (c *Command) GetName() (string, error) {
 
 // SetName sets the name of a command.
 func (c *Command) SetName(name string) error {
-
 	// Checks if the command is nil
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	// Checks if the name argument is empty
 	if name == "" {
 		return ErrEmptyCommandName
@@ -74,7 +78,6 @@ func (c *Command) SetName(name string) error {
 
 // GetDescription returns the commands Description.
 func (c *Command) GetDescription() (string, error) {
-
 	// Checks if a command is nil
 	if c == nil {
 		return "", ErrNilCommand
@@ -91,7 +94,6 @@ func (c *Command) GetDescription() (string, error) {
 
 // SetDescription sets the Description of a command.
 func (c *Command) SetDescription(des string) error {
-
 	// Checks if a command is nil
 	if c == nil {
 		return ErrNilCommand
@@ -101,7 +103,7 @@ func (c *Command) SetDescription(des string) error {
 	if des == "" {
 		return fmt.Errorf("des cannot be blank when setting description")
 	}
-	
+
 	// Assigns the des argument to commands Description
 	c.Description = des
 	return nil
@@ -109,12 +111,11 @@ func (c *Command) SetDescription(des string) error {
 
 // GetAdditionalNames returns all of a commands additional names into a string array.
 func (c *Command) GetAdditionalNames() ([]string, error) {
-
 	// Checks if command is nil
 	if c == nil {
 		return nil, ErrNilCommand
 	}
-	
+
 	// Checks if AdditionalNames is nil
 	if c.AdditionalNames == nil {
 		return nil, fmt.Errorf("cannot get empty additional names list")
@@ -124,13 +125,13 @@ func (c *Command) GetAdditionalNames() ([]string, error) {
 	return c.AdditionalNames, nil
 }
 
-// SetAdditionalNames sets the additional names of a command. 
+// SetAdditionalNames sets the additional names of a command.
 func (c *Command) SetAdditionalNames(names []string) error {
 	// Checks if a command is nil
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	// Checks if the names argument is nil
 	if names == nil {
 		return fmt.Errorf("string %w", ErrNilArray)
@@ -142,7 +143,6 @@ func (c *Command) SetAdditionalNames(names []string) error {
 
 // AddAdditionalName adds a single name to the AdditionalNames array.
 func (c *Command) AddAdditionalName(name string) error {
-
 	// Checks if command is nil
 	if c == nil {
 		return ErrNilCommand
@@ -166,7 +166,6 @@ func (c *Command) AddAdditionalName(name string) error {
 
 // GetFlags returns the map stored in c.Flags.
 func (c *Command) GetFlags() (Flags, error) {
-
 	// Checks if command is nil
 	if c == nil {
 		return nil, ErrNilCommand
@@ -183,12 +182,11 @@ func (c *Command) GetFlags() (Flags, error) {
 
 // SetFlags sets the flags in a Command with a given flags argument.
 func (c *Command) SetFlags(flags Flags) error {
-
 	// Checks if command is nil
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	// Checks if the flags argument is nil
 	if flags == nil {
 		return ErrNilFlags
@@ -206,22 +204,21 @@ func (c *Command) SetFlags(flags Flags) error {
 
 // AddFlag adds a new flag to Commands Flag map. key is the identifier & name of a flag. flag is the Flag object that'll be stored as a value.
 func (c *Command) AddFlag(key string, flag *Flag) error {
-
 	// Checks if the command is nil
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	// Checks if the key argument is empty
 	if key == "" {
 		return fmt.Errorf("key cannot be empty")
 	}
-	
+
 	// Checks if the flagFunction argument is empty
 	if flag == nil {
 		return fmt.Errorf("flag cannot be empty")
 	}
-	
+
 	// Checks if c.Flags is nil
 	if c.Flags == nil {
 		c.Flags = make(Flags)
@@ -234,13 +231,12 @@ func (c *Command) AddFlag(key string, flag *Flag) error {
 
 // parseFlags reads through a commands Flags map and finds valid flags that are called through user arguments.
 func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
-	
 	// Stores all gathered flags from args
 	var parsed []parsedFlag
 
 	// Stores unknown flags that we're input
 	var unknownFlags []string
-	
+
 	// Loops over each argument
 	for i, arg := range args {
 
@@ -251,44 +247,44 @@ func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
 			if flag == nil {
 				return nil, nil, fmt.Errorf("flag %s cannot be nil", arg)
 			}
-			
+
 			// Create flag for parsed flag array
 			entry := parsedFlag{flag: flag}
-	
+
 			// Checks if the flag takes in a value
 			if flag.TakesValue {
 				if i+1 >= len(args) {
 					// Returns an error if no value is given
 					return nil, nil, fmt.Errorf("flag %s requires a value", arg)
 				}
-				
+
 				// Increment and assign argument to flag value
 				i++
 				if !strings.HasPrefix(args[i], "-") {
 					entry.value = args[i]
 				}
 			}
-			
+
 			// Add parsed flag to parsed array
 			parsed = append(parsed, entry)
 			continue
 		}
-		
+
 		// If the argument doesn't have a dash or double dashes, it's skipped as it's a potential value for commands or flags.
 		if !strings.HasPrefix(arg, "-") {
 			continue
 		}
-		
+
 		// Parses the argument to see if it's a numeric value
 		_, err := strconv.ParseFloat(arg, 64)
 		if err == nil || errors.Is(err, strconv.ErrRange) {
 			continue
 		}
-		
+
 		// Unknown flags are added to unknownFlags
 		unknownFlags = append(unknownFlags, arg)
 	}
-	
+
 	return parsed, unknownFlags, nil
 }
 
@@ -298,12 +294,12 @@ func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) error {
 	for _, entry := range flags {
 		// Assign flag value to context
 		ctx.ParsedFlagValue = entry.value
-	
+
 		// Validate flag
 		if err := entry.flag.validate(); err != nil {
 			return err
 		}
-		
+
 		// Execute flag
 		if err := entry.flag.Execute(ctx); err != nil {
 			return err
@@ -315,10 +311,8 @@ func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) error {
 
 // runFlags handles the parsing and execution of flags from given arguments.
 func (c *Command) runFlags(ctx *Context, args []string) error {
-
 	// Gather functions, unknown flags, and error
 	flags, unknown, err := c.parseFlags(args)
-	
 	// Error check for parseFlags
 	if err != nil {
 		return err
@@ -328,28 +322,94 @@ func (c *Command) runFlags(ctx *Context, args []string) error {
 	if len(unknown) > 0 {
 		return fmt.Errorf("unknown arguments: %v", strings.Join(unknown, " "))
 	}
-	
+
 	return c.executeFlags(ctx, flags)
 }
 
 // validate checks if a Command is valid for argbin.
 func (c *Command) validate() error {
-
 	// Checks if the command is nil
 	if c == nil {
 		return ErrNilCommand
 	}
-	
+
 	// Checks if the name is empty
 	if c.Name == "" {
 		return ErrEmptyCommandName
 	}
-	
-	// Checks if the command execution is nil
-	if c.Execute == nil {
+
+	// Checks if the command execution & subcommands are nil
+	if c.Execute == nil && len(c.Subcommands) == 0 {
 		return ErrNilCommandFunction
 	}
-	
+
 	return nil
 }
+
+func (c *Command) parseSubcommand(args []string) (*Command, error) {
+	if err := c.validate(); err != nil {
+		return nil, err
+	}
+
+	if len(args) == 0 || len(c.Subcommands) == 0 {
+		return c, nil
+	}
+
+	for _, child := range c.Subcommands {
+		if child == nil {
+			return nil, ErrNilCommand
+		}
+
+		if child.Name == args[0] || slices.Contains(child.AdditionalNames, args[0]) {
+			// Matched a child; recurse with the remaining arguments.
+			if err := child.validate(); err != nil {
+				return nil, err
+			}
+			return child.parseSubcommand(args[1:])
+		}
+	}
+
+	return c, fmt.Errorf("unknown subcommand: %s", args[0])
+}
+
+func checkSubcommands(cmd *Command, ctx *Context) (*Command, error) {
+	if err := cmd.validate(); err != nil {
+		return nil, err
+	}
+
+	if cmd.Execute != nil {
+		return cmd, nil
+	}
+
+	if cmd.Subcommands != nil || len(cmd.Subcommands) >= 1 {
+		subCmd, err := cmd.parseSubcommand(ctx.Args[1:])
+		if err != nil {
+			return cmd, fmt.Errorf("unable to find subcommand %s in %s", ctx.Args[1], cmd.Name)
+		}
+
+		ctx.Command = subCmd
+		return subCmd, nil
+	}
+
+	return cmd, nil
+}
+
+func validateSubCommand(subCmd *Command) (error) {
+	if subCmd == nil {
+		return ErrNilCommand
+	}
+
+	if err := subCmd.validate(); err != nil {
+		return err
+	}
+
+	if len(subCmd.Subcommands) >= 1 {
+		return fmt.Errorf("subcommand %s missing arguments", subCmd.Name)
+	}
+
+	subCmd.isSubcommand = true
+
+	return nil
+}
+
 

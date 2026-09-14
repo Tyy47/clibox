@@ -34,7 +34,7 @@ var (
 
 	// Command Errors
 
-	ErrNilCommandFunction   = errors.New("command execute field cannot be nil")
+	ErrNilCommandFunction   = errors.New("command execute field or subcommands list cannot be nil")
 	ErrDuplicateCommandName = errors.New("command names cannot be duplicated")
 
 	// Flag Errors
@@ -196,6 +196,16 @@ func (r *Root) Run() error {
 			}
 
 			i++
+		}
+
+		if cmd.Execute == nil {
+			if cmd.isSubcommand {
+				return fmt.Errorf("subcommand %s is missing execute function", cmd.Name)
+			}
+
+			if len(cmd.Subcommands) >= 1 {
+				return fmt.Errorf("subcommand %s missing arguments", cmd.Name)
+			}
 		}
 
 		// Executes a command using the given context to manipulate.
