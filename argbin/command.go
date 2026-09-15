@@ -229,6 +229,24 @@ func (c *Command) AddFlag(key string, flag *Flag) error {
 	return nil
 }
 
+// AddSubcommands adds given commands to the Subcommands array.
+func (c *Command) AddSubcommands(cmds ...*Command) error {
+	if c == nil {
+		return ErrNilCommand
+	}
+
+	if len(c.Subcommands) == 0 {
+		c.Subcommands = make([]*Command, 0)
+	}
+
+	for _, cmd := range cmds {
+		if cmd == nil {
+			return ErrNilCommand
+		}
+
+		c.Subcommands = append(c.Subcommands, cmd)
+}
+
 // parseFlags reads through a commands Flags map and finds valid flags that are called through user arguments.
 func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
 	// Stores all gathered flags from args

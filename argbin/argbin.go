@@ -139,12 +139,12 @@ func (ctx *Context) gatherParsedValue(args []string, cmd *Command) error {
 	if ctx == nil {
 		return ErrNilContext
 	}
-
+	
 	// Checks if an argument was given or not, returns an error if not.
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
 	}
-
+	
 	// Assigns ParsedValue to the next arg
 	ctx.ParsedValue = args[0]
 	return nil
@@ -206,7 +206,7 @@ func (r *Root) Run() error {
 		if cmd.TakesValue {
 			// starting point for indexing
 			start := i + ctx.argCount + 1
-
+			
 			// Check to see if the starting point is greater or equal to arguments length
 			if start >= len(args) {
 				return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
@@ -220,14 +220,14 @@ func (r *Root) Run() error {
 			i += ctx.argCount
 			i++
 		}
-
+		
 		// Checks if the cmd execute is nil
 		if cmd.Execute == nil {
 			// Returns error that the subcommand is missing the execute field
 			if cmd.isSubcommand {
 				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingExecute)
 			}
-
+			
 			// Returns an error if a subcommand is missing arguments
 			if len(cmd.Subcommands) >= 1 {
 				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingArgs)
