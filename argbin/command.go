@@ -245,6 +245,9 @@ func (c *Command) AddSubcommands(cmds ...*Command) error {
 		}
 
 		c.Subcommands = append(c.Subcommands, cmd)
+	}
+
+	return nil
 }
 
 // parseFlags reads through a commands Flags map and finds valid flags that are called through user arguments.
