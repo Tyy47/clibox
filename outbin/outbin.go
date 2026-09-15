@@ -7,6 +7,7 @@ import (
 	"github.com/Tyy47/clibox/colorbin"
 )
 
+// ColorOption stores the color selection for output
 type ColorOption int
 
 type Output struct {
@@ -15,12 +16,14 @@ type Output struct {
 	ColorMode ColorOption
 }
 
+// Const enum holding the color options
 const (
 	ColorAuto ColorOption = iota
 	ColorOFF
 	ColorON
 )
 
+// NewOutput instantiates a pointer to a new Output object.
 func NewOutput(out io.Writer, err io.Writer) *Output {
 	return &Output{
 		Stdout: out,
@@ -28,6 +31,9 @@ func NewOutput(out io.Writer, err io.Writer) *Output {
 	}
 }
 
+// Success prints a message to the terminal with a "success:" prefix.
+// 
+// "success:" can be colored depending on the Output's ColorMode
 func (o *Output) Success(msg any) {
 	label := any("success")
 
@@ -38,6 +44,9 @@ func (o *Output) Success(msg any) {
 	fmt.Fprintf(o.Stdout, "%s: %v\n", label, msg)
 }
 
+// Successf prints a formatted message to the terminal with a "success:" prefix.
+// 
+// "success:" can be colored depending on the Output's ColorMode
 func (o *Output) Successf(format string, args ...any) {
 	label := any("success")
 
@@ -52,6 +61,9 @@ func (o *Output) Successf(format string, args ...any) {
 	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
 }
 
+// Error prints a message to the terminal with a "error:" prefix.
+// 
+// "error:" can be colored depending on the Output's ColorMode
 func (o *Output) Error(msg any) {
 	label := any("error")
 
@@ -63,6 +75,9 @@ func (o *Output) Error(msg any) {
 }
 
 
+// Errorf prints a formatted message to the terminal with a "error:" prefix.
+// 
+// "error:" can be colored depending on the Output's ColorMode
 func (o *Output) Errorf(format string, args ...any) {
 	label := any("error")
 
@@ -77,6 +92,9 @@ func (o *Output) Errorf(format string, args ...any) {
 	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
 }
 
+// Info prints a message to the terminal with a "info:" prefix.
+// 
+// "info:" can be colored depending on the Output's ColorMode
 func (o *Output) Info(msg any) {
 	label := any("info")
 
@@ -88,6 +106,9 @@ func (o *Output) Info(msg any) {
 }
 
 
+// Infof prints a formatted message to the terminal with a "info:" prefix.
+// 
+// "info:" can be colored depending on the Output's ColorMode
 func (o *Output) Infof(format string, args ...any) {
 	label := any("info")
 
