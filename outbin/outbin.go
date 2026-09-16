@@ -122,3 +122,33 @@ func (o *Output) Infof(format string, args ...any) {
 
 	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
 }
+
+// Warning prints a message to the terminal with a "warning:" prefix.
+// 
+// "warning:" can be colored depending on the Output's ColorMode
+func (o *Output) Warning(msg any) {
+	label := any("warning")
+
+	if o.ColorMode == ColorON || o.ColorMode == ColorAuto {
+		label = colorbin.Yellow(label).ToHighIntensityBold()
+	}
+
+	fmt.Fprintf(o.Stdout, "%s: %v\n", label, msg)
+}
+
+// Warningf prints a formatted message to the terminal with a "warning:" prefix.
+// 
+// "warning:" can be colored depending on the Output's ColorMode
+func (o *Output) Warningf(format string, args ...any) {
+	label := any("warning")
+
+	if o.ColorMode == ColorON || o.ColorMode == ColorAuto {
+		label = colorbin.Yellow(label).ToHighIntensityBold()
+	}
+
+	msgs := make([]any, 0, len(args)+1)
+	msgs = append(msgs, label)
+	msgs = append(msgs, args...)
+
+	fmt.Fprintf(o.Stdout, "%s: "+format+"\n", msgs...)
+}
