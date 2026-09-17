@@ -3,6 +3,8 @@ package inputbin
 import (
 	"errors"
 	"fmt"
+
+	"github.com/Tyy47/clibox/colorbin"
 )
 
 var (
@@ -29,6 +31,17 @@ type InputOptions struct {
 
 	//  Answers is a required field as these will be presented to the user for selection.
 	Answers []string
+
+	// Color customization
+	
+	// PrefixColor sets the colors for the Prefix string
+	PrefixColor *colorbin.ColorOptions
+
+	// QuestionColor sets the colors for the Question string
+	QuestionColor *colorbin.ColorOptions
+
+	// AnswersColor sets the colors for each of the answers provided in the Answers array
+	AnswersColor *colorbin.ColorOptions
 }
 
 // validate checks if the InputOptions received in a function are valid for use
@@ -45,6 +58,24 @@ func (i *InputOptions) validate() error {
 	return nil
 }
 
+func modifyInputOptionColors(i *InputOptions) {
+
+	if i.PrefixColor != nil {
+		i.Prefix = colorbin.ColorStrings(*i.PrefixColor, i.Prefix)[0]
+	}
+
+	if i.QuestionColor != nil {
+		i.Question = colorbin.ColorStrings(*i.QuestionColor, i.Question)[0]
+	}
+
+	if i.AnswersColor != nil {
+		i.Answers = colorbin.ColorStrings(*i.AnswersColor, i.Answers...)
+	}
+}
+
+
+// Prompt takes in a set of InputOptions and delievers a prompt to the cli based on the options provided.
+// Returns a string of the users response and an error if input was nil.
 func Prompt(options *InputOptions) (string, error) {
 	
 	if options == nil {
@@ -55,14 +86,23 @@ func Prompt(options *InputOptions) (string, error) {
 		return "", err
 	}
 
+	modifyInputOptionColors(options)
+
+
 	label := options.Prefix + options.Question
 
 	fmt.Println(label)
-	
-	for i := range options.Answers {
-		fmt.Printf("%d. %s\n", i, options.Answers[i])
-	}
 
+	if options.AnswersColor != nil {
+		for i := range options.Answers {
+			fmt.Printf("%d. %s\n", i, colorbin.ColorStrings(*options.AnswersColor, options.Answers...)[i])
+		}
+	} else {
+		for i := range options.Answers {
+			fmt.Printf("%d. %s\n", i, options.Answers[i])
+		}
+	}
+	
 	var userSelection string
 
 	_, err := fmt.Scanln(&userSelection)

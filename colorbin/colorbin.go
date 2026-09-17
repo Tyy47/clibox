@@ -300,3 +300,19 @@ func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Col
 
 	return c
 }
+
+// ColorSingleString takes in a set of ColorOptions and colors a single string and returns it
+func ColorStrings(options ColorOptions, strings ...string) []string {
+	coloredStrings := make([]string, len(strings))
+
+	for i, s := range strings {
+		colored := Color{
+			Value:        s,
+			ColorOptions: options,
+		}
+
+		coloredStrings[i] = colored.String()
+	}
+
+	return coloredStrings
+}
