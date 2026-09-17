@@ -3,6 +3,7 @@ package inputbin
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Tyy47/clibox/colorbin"
 )
@@ -52,12 +53,14 @@ func (i *InputOptions) validate() error {
 	}
 
 	if i.Answers == nil {
-		return ErrEmptyAnswers
+		i.Answers = make([]string, 0)
 	}
 
 	return nil
 }
 
+// modifyInputOptionColors takes in an InputOptions object and modifies the colors of the strings
+// if the Color modifying fields are set in InputOptions.
 func modifyInputOptionColors(i *InputOptions) {
 
 	if i.PrefixColor != nil {
@@ -111,4 +114,42 @@ func Prompt(options *InputOptions) (string, error) {
 	}
 
 	return userSelection, nil
+}
+
+// Confirm presents the user with a confirmation prompt to continue on with something.
+// "yes" returns true and "no" false. defaultYes will make the default option yes if the user presses enter with no entry.
+func Confirm(ops *InputOptions, defaultYes bool) bool {
+
+	// Valid check for ops input
+	ops.validate()
+
+	// Modify colors if given
+	modifyInputOptionColors(ops)
+
+	// Display the prompt to the user
+	fmt.Println(ops.Question)
+	
+	// Init the string container
+	var userInput string
+
+	// Prints prefix if available
+	if ops.Prefix != "" {
+		fmt.Println(ops.Prefix)
+	}
+
+	// Grab users entry
+	fmt.Scan(&userInput)
+
+	// Lowercase the input
+	userInput = strings.ToLower(userInput)
+
+	// Return the result based on user response
+	switch userInput {
+	case "yes", "ye", "y":
+		return true
+	case "no", "n":
+		return false
+	default:
+		return defaultYes
+	}
 }
