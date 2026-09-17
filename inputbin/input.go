@@ -10,7 +10,8 @@ var (
 	ErrNoInputGiven  = errors.New("missing required input")
 )
 
-//
+// Prompt allows the user to receive a prompt with a question and a selection of answers.
+// promtPrefix is an option prefix that gets added to the question. Example: promtPrefix: question.
 func Prompt(promtPrefix string, question string, answers []string) (string, error) {
 	if promtPrefix == "" {
 		fmt.Println(question)
