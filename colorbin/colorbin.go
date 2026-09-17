@@ -40,17 +40,17 @@ var ansiModifierCodes = map[string]string{
 	"reset":         "\033[0m",
 }
 
-// Color is an object that stores all the needed data for a colored string and it's related modifying members.
+// Color is created object to create colored strings
 //
-// Members:
-//   - Value: Stores the string that will be modified, can be called to retrieve non-colored string.
-//   - ChosenColor: Stores a validColor for the coloring of the string.
-//   - Bold: Stores the Bold state. 
-//   - Underline: Stores the underline state.
-//   - HighIntensity: Stores the highIntensity state.
-//   - Background: Stores the background state.
+// Fields: 
+//	- Value: Stores a value that is later converted to a string
 type Color struct {
-	Value                   any        // Stores the non-colored string to be called upon later
+	Value any // Stores the non-colored string to be called upon later
+	ColorOptions
+}
+
+// ColorOptions stores all of the modifiying data for colored strings.
+type ColorOptions struct {
 	ChosenColor             validColor // Stores the called color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white.
 	BackgroundColor         validColor // Stores the called background color. Color options are: black, red, green, yellow, blue, magenta, cyan, and white. Disclaimer: Background color will only be applied if Background is set to true.*
 	Bold                    bool       // Stores the state for bold. Toggling to true will turn the text bold.
@@ -96,7 +96,9 @@ const (
 func Black(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorBlack,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorBlack,
+		},
 	}
 }
 
@@ -105,7 +107,9 @@ func Black(v any) *Color {
 func Red(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorRed,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorRed,
+		},
 	}
 }
 
@@ -114,7 +118,9 @@ func Red(v any) *Color {
 func Green(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorGreen,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorGreen,
+		},
 	}
 }
 
@@ -123,7 +129,9 @@ func Green(v any) *Color {
 func Yellow(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorYellow,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorYellow,
+		},
 	}
 }
 
@@ -132,7 +140,9 @@ func Yellow(v any) *Color {
 func Blue(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorBlue,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorBlue,
+		},
 	}
 }
 
@@ -141,7 +151,9 @@ func Blue(v any) *Color {
 func Magenta(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorMagenta,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorMagenta,
+		},
 	}
 }
 
@@ -150,7 +162,9 @@ func Magenta(v any) *Color {
 func Cyan(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorCyan,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorCyan,
+		},
 	}
 }
 
@@ -159,13 +173,15 @@ func Cyan(v any) *Color {
 func White(v any) *Color {
 	return &Color{
 		Value:       utils.StringConverter(v),
-		ChosenColor: ColorWhite,
+		ColorOptions: ColorOptions{
+			ChosenColor: ColorWhite,
+		},
 	}
 }
 
 // String is executed when a color function is called. String takes the Color member Value, adds the correct escape codes and returns the colored string. String can be called manually to convert the Color object to a string.
 func (c *Color) String() string {
-	var escapeCode = make([]string, 0, 6)
+	escapeCode := make([]string, 0, 6)
 
 	foreground, ok := ansiForegroundCodes[utils.StringConverter(c.ChosenColor)]
 
@@ -173,31 +189,31 @@ func (c *Color) String() string {
 		return utils.StringConverter(c.Value)
 	}
 
-	if c.Bold {
+	if c.ColorOptions.Bold {
 		escapeCode = append(escapeCode, ansiModifierCodes["bold"])
 	}
 
-	if c.Italic {
+	if c.ColorOptions.Italic {
 		escapeCode = append(escapeCode, ansiModifierCodes["italic"])
 	}
 
-	if c.Underline {
+	if c.ColorOptions.Underline {
 		escapeCode = append(escapeCode, ansiModifierCodes["underline"])
 	}
 
-	if c.Strikethrough {
+	if c.ColorOptions.Strikethrough {
 		escapeCode = append(escapeCode, ansiModifierCodes["strikethrough"])
 	}
 
-	if c.HighIntensity {
+	if c.ColorOptions.HighIntensity {
 		escapeCode = append(escapeCode, foreground[1])
 	} else {
 		escapeCode = append(escapeCode, foreground[0])
 	}
 
-	if c.Background || c.HighIntensityBackground {
+	if c.ColorOptions.Background || c.ColorOptions.HighIntensityBackground {
 		if background, ok := ansiBackgroundCodes[utils.StringConverter(c.BackgroundColor)]; ok {
-			if c.HighIntensityBackground {
+			if c.ColorOptions.HighIntensityBackground {
 				escapeCode = append(escapeCode, background[1])
 			} else {
 				escapeCode = append(escapeCode, background[0])
@@ -224,43 +240,42 @@ func (c *Color) String() string {
 	builder.WriteString(ansiModifierCodes["reset"])
 
 	return builder.String()
-
 }
 
 // ToBold toggles the Color bold member to true. When called, a color function will print in bold.
 func (c *Color) ToBold() *Color {
-	c.Bold = true
+	c.ColorOptions.Bold = true
 	return c
 }
 
 // ToHighIntensity toggles the Color highIntensity member to true. When called, a color function will print with high intensity.
 func (c *Color) ToHighIntensity() *Color {
-	c.HighIntensity = true
+	c.ColorOptions.HighIntensity = true
 	return c
 }
 
 // ToHighIntensityBold toggles both the Color highIntensity and bold members to true. When called, a color function will print with high intensity and in bold.
 func (c *Color) ToHighIntensityBold() *Color {
-	c.HighIntensity = true
-	c.Bold = true
+	c.ColorOptions.HighIntensity = true
+	c.ColorOptions.Bold = true
 	return c
 }
 
 // ToUnderline toggles the Color underline member to true. When called, a color function will print with an underline.
 func (c *Color) ToUnderline() *Color {
-	c.Underline = true
+	c.ColorOptions.Underline = true
 	return c
 }
 
 // ToItalic toggles the Color italic member to true. When called, a color function will print with an italic style.
 func (c *Color) ToItalic() *Color {
-	c.Italic = true
+	c.ColorOptions.Italic = true
 	return c
 }
 
 // ToStrikethrough toggles the Color strikethrough member to true. When called, a color function will print with a strikethrough.
 func (c *Color) ToStrikethrough() *Color {
-	c.Strikethrough = true
+	c.ColorOptions.Strikethrough = true
 	return c
 }
 
@@ -279,11 +294,9 @@ func (c *Color) ToStrikethrough() *Color {
 //   - ColorCyan
 //   - ColorWhite
 func (c *Color) ApplyBackground(colorOption validColor, highIntensity bool) *Color {
-
-	c.Background = true
-	c.BackgroundColor = colorOption
-	c.HighIntensityBackground = highIntensity
+	c.ColorOptions.Background = true
+	c.ColorOptions.BackgroundColor = colorOption
+	c.ColorOptions.HighIntensityBackground = highIntensity
 
 	return c
 }
-
