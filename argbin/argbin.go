@@ -47,6 +47,7 @@ var (
 
 	ErrSubcommandMissingExecute = errors.New("subcommand is missing execute function")
 	ErrSubcommandMissingArgs    = errors.New("subcommand is missing required arguments")
+	ErrExecuteSubcommandsToggled = errors.New("execute and subcommands field in command cannot both be enabled")
 
 	// Flag Errors
 
@@ -241,6 +242,7 @@ func (r *Root) Run() error {
 			// Returns command execution success
 			return nil
 		}
+
 	}
 
 	// Returns an error if no commands are found with a given argument.

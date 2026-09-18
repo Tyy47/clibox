@@ -364,6 +364,10 @@ func (c *Command) validate() error {
 		return ErrNilCommandFunction
 	}
 
+	if c.Execute != nil && len(c.Subcommands) > 0 {
+		return ErrExecuteSubcommandsToggled
+	}
+
 	return nil
 }
 
@@ -418,7 +422,7 @@ func checkSubcommands(cmd *Command, ctx *Context) (*Command, error) {
 	if cmd.Subcommands != nil || len(cmd.Subcommands) >= 1 {
 		subCmd, err := cmd.parseSubcommand(ctx.Args[1:], ctx)
 		if err != nil {
-			return cmd, ErrUnknownCommand
+			return cmd, fmt.Errorf("%w %s", ErrUnknownCommand, ctx.Args[1])
 		}
 
 		ctx.Command = subCmd
