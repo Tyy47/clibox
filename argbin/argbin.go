@@ -15,7 +15,7 @@ var (
 
 	ErrNilArray          = errors.New("array cannot be nil")
 	ErrNilMap            = errors.New("map cannot be nil")
-	ErrEmptyDescription  = errors.New("description field cannot be empty")
+	ErrEmptyHelpMenu  = errors.New("description field cannot be empty")
 	ErrNilCommand        = errors.New("command cannot be nil")
 	ErrMissingArguments  = errors.New("no arguments provided")
 	ErrUnknownCommand    = errors.New("unknown command")

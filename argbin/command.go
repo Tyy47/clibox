@@ -13,8 +13,14 @@ type Command struct {
 	// Name of the command that'll be ran
 	Name string
 
-	// Description is your Command help menu
-	Description string
+	// Short is a small description of the command
+	Short string
+
+	// Long is a longer description of the command
+	Long string
+
+	// HelpMenu is your Command help menu
+	HelpMenu string
 
 	// Additional names is where aliases are stored for a command.
 	AdditionalNames []string
@@ -43,104 +49,6 @@ type (
 	}
 )
 
-// GetName returns the commands Name.
-func (c *Command) GetName() (string, error) {
-	// Checks if the command is nil
-	if c == nil {
-		return "", ErrNilCommand
-	}
-
-	// Checks if the Name is empty
-	if c.Name == "" {
-		return "", ErrEmptyCommandName
-	}
-
-	// Returns the commands Name
-	return c.Name, nil
-}
-
-// SetName sets the name of a command.
-func (c *Command) SetName(name string) error {
-	// Checks if the command is nil
-	if c == nil {
-		return ErrNilCommand
-	}
-
-	// Checks if the name argument is empty
-	if name == "" {
-		return ErrEmptyCommandName
-	}
-
-	// Assigns name to the command Name
-	c.Name = name
-	return nil
-}
-
-// GetDescription returns the commands Description.
-func (c *Command) GetDescription() (string, error) {
-	// Checks if a command is nil
-	if c == nil {
-		return "", ErrNilCommand
-	}
-
-	// Checks if the command descript is empty
-	if c.Description == "" {
-		return "", ErrEmptyDescription
-	}
-
-	// Returns the commands Description
-	return c.Description, nil
-}
-
-// SetDescription sets the Description of a command.
-func (c *Command) SetDescription(des string) error {
-	// Checks if a command is nil
-	if c == nil {
-		return ErrNilCommand
-	}
-
-	// Checks if the des argument is empty
-	if des == "" {
-		return fmt.Errorf("des %w", ErrEmptyArgument)
-	}
-
-	// Assigns the des argument to commands Description
-	c.Description = des
-	return nil
-}
-
-// GetAdditionalNames returns all of a commands additional names into a string array.
-func (c *Command) GetAdditionalNames() ([]string, error) {
-	// Checks if command is nil
-	if c == nil {
-		return nil, ErrNilCommand
-	}
-
-	// Checks if AdditionalNames is nil
-	if c.AdditionalNames == nil {
-		return nil, ErrEmptyAliasList
-	}
-
-	// Returns commands AdditionalNames
-	return c.AdditionalNames, nil
-}
-
-// SetAdditionalNames sets the additional names of a command.
-func (c *Command) SetAdditionalNames(names []string) error {
-	// Checks if a command is nil
-	if c == nil {
-		return ErrNilCommand
-	}
-
-	// Checks if the names argument is nil
-	if names == nil {
-		return fmt.Errorf("string %w", ErrNilArray)
-	}
-
-	c.AdditionalNames = names
-	return nil
-}
-
 // AddAdditionalName adds a single name to the AdditionalNames array.
 func (c *Command) AddAdditionalName(name string) error {
 	// Checks if command is nil
@@ -161,44 +69,6 @@ func (c *Command) AddAdditionalName(name string) error {
 
 	// Appends the new name to the AdditionalNames array
 	c.AdditionalNames = append(c.AdditionalNames, name)
-	return nil
-}
-
-// GetFlags returns the map stored in c.Flags.
-func (c *Command) GetFlags() (Flags, error) {
-	// Checks if command is nil
-	if c == nil {
-		return nil, ErrNilCommand
-	}
-
-	// Checks if Flags is nil
-	if c.Flags == nil {
-		return nil, ErrNilFlags
-	}
-
-	// Return flag map
-	return c.Flags, nil
-}
-
-// SetFlags sets the flags in a Command with a given flags argument.
-func (c *Command) SetFlags(flags Flags) error {
-	// Checks if command is nil
-	if c == nil {
-		return ErrNilCommand
-	}
-
-	// Checks if the flags argument is nil
-	if flags == nil {
-		return ErrNilFlags
-	}
-
-	// Checks if the c.Flags is nil, creates a map if it is nil
-	if c.Flags == nil {
-		c.Flags = make(Flags)
-	}
-
-	// Sets c.Flags to the flags argument
-	c.Flags = flags
 	return nil
 }
 

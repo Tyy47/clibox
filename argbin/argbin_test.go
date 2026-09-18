@@ -16,7 +16,7 @@ func withArgs(t *testing.T, args ...string) {
 func validRoot(command *Command) *Root {
 	return &Root{
 		AppName:     "test",
-		Description: "test application",
+		HelpMenu: "test application",
 		CommandList: []*Command{command},
 	}
 }
