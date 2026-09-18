@@ -180,6 +180,7 @@ func (r *Root) Run() error {
 
 		// Checks if the argument is a command, returns nil if not.
 		cmd, err := r.parseCommand(&ctx, arg)
+		ctx.Command = cmd
 
 		// If there is no command, it skips the argument.
 		if cmd == nil {
@@ -198,9 +199,15 @@ func (r *Root) Run() error {
 
 		// If there is 2 or more arguments, it will parse flags.
 		if len(args) >= 2 {
-			if err := cmd.runFlags(&ctx, args[i+1:]); err != nil {
+			handled, err := cmd.runFlags(&ctx, args[i+1:])
+			if err != nil {
 				return err
 			}
+
+			if handled {
+				return nil
+			}
+
 		}
 
 		// If a command takes a value, it will grab the subsiquent argument and add it to ctx.ParsedValue. As well as add additional arguments to context.
@@ -224,15 +231,13 @@ func (r *Root) Run() error {
 		
 		// Checks if the cmd execute is nil
 		if cmd.Execute == nil {
-			// Returns error that the subcommand is missing the execute field
-			if cmd.isSubcommand {
-				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingExecute)
-			}
-			
 			// Returns an error if a subcommand is missing arguments
-			if len(cmd.Subcommands) >= 1 {
+			if len(cmd.Subcommands) >= 0 {
 				return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingArgs)
 			}
+
+			return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingExecute)
+			
 		}
 
 		// Executes a command using the given context to manipulate.

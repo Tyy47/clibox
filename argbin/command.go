@@ -309,8 +309,25 @@ func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
 	return parsed, unknownFlags, nil
 }
 
+// runFlags handles the parsing and execution of flags from given arguments.
+func (c *Command) runFlags(ctx *Context, args []string) (bool, error) {
+	// Gather functions, unknown flags, and error
+	flags, unknown, err := c.parseFlags(args)
+	// Error check for parseFlags
+	if err != nil {
+		return false, err
+	}
+
+	// Errors if unknown arguments are input
+	if len(unknown) > 0 {
+		return false, fmt.Errorf("%w %v", ErrUnknownArguments, strings.Join(unknown, " "))
+	}
+
+	return c.executeFlags(ctx, flags)
+}
+
 // executeFlags runs each flags related function. Valid flags are gathered from parseFlags().
-func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) error {
+func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) (bool, error) {
 	// Loop through each parsed flag
 	for _, entry := range flags {
 		// Assign flag value to context
@@ -318,33 +335,21 @@ func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) error {
 
 		// Validate flag
 		if err := entry.flag.validate(); err != nil {
-			return err
+			return false, err
 		}
 
 		// Execute flag
 		if err := entry.flag.Execute(ctx); err != nil {
-			return err
+			return false, err
+		}
+
+		// Returns true if Terminal is true
+		if entry.flag.Terminal {
+			return true, nil
 		}
 
 	}
-	return nil
-}
-
-// runFlags handles the parsing and execution of flags from given arguments.
-func (c *Command) runFlags(ctx *Context, args []string) error {
-	// Gather functions, unknown flags, and error
-	flags, unknown, err := c.parseFlags(args)
-	// Error check for parseFlags
-	if err != nil {
-		return err
-	}
-
-	// Errors if unknown arguments are input
-	if len(unknown) > 0 {
-		return fmt.Errorf("%w %v", ErrUnknownArguments, strings.Join(unknown, " "))
-	}
-
-	return c.executeFlags(ctx, flags)
+	return false, nil
 }
 
 // validate checks if a Command is valid for argbin.
@@ -388,6 +393,10 @@ func (c *Command) parseSubcommand(args []string, ctx *Context) (*Command, error)
 		// Checks if a subcommand is nil
 		if child == nil {
 			return nil, ErrNilCommand
+		}
+
+		if strings.HasPrefix(args[0], "-") {
+			return c, nil
 		}
 		
 		// Checks if an arg is a subcommand
@@ -442,11 +451,6 @@ func validateSubCommand(subCmd *Command) error {
 	// Runs internal validate to check if the command is valid
 	if err := subCmd.validate(); err != nil {
 		return err
-	}
-	
-	// If the command has subcommands, it'll return an error stating the command is missing arguments through ErrSubcommandMissingArgs.
-	if len(subCmd.Subcommands) >= 1 {
-		return fmt.Errorf("%s %w", subCmd.Name, ErrSubcommandMissingArgs)
 	}
 	
 	// Internal marker to track subcommands

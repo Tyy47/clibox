@@ -7,6 +7,9 @@ type Flag struct {
 
 	// Takes the next argument in line after the flag if true
 	TakesValue bool
+
+	// Terminal stops normal command execution after this succeeds
+	Terminal bool
 }
 
 // FlagFunction configures a flag using the provided Context.                           

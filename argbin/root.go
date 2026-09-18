@@ -251,11 +251,9 @@ func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
 			}
 
 			if err := validateSubCommand(subCmd); err != nil {
-				ctx.Command = cmd
 				return cmd, err
 			} else {
 				subCmd.isSubcommand = true
-				ctx.Command = subCmd
 				return subCmd, nil
 			}
 		}
