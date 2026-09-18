@@ -7,4 +7,3 @@
 - Add code documentation for String() method.
 
 ## inputbin
-- Add single text based retrieval prompt

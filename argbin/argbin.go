@@ -207,7 +207,6 @@ func (r *Root) Run() error {
 			if handled {
 				return nil
 			}
-
 		}
 
 		// If a command takes a value, it will grab the subsiquent argument and add it to ctx.ParsedValue. As well as add additional arguments to context.

@@ -79,30 +79,30 @@ func modifyInputOptionColors(i *InputOptions) {
 
 // Prompt takes in a set of InputOptions and delievers a prompt to the cli based on the options provided.
 // Returns a string of the users response and an error if input was nil.
-func Prompt(options *InputOptions) (string, error) {
+func Prompt(ops *InputOptions) (string, error) {
 	
-	if options == nil {
+	if ops == nil {
 		return "", ErrNilInputOptions
 	}
 
-	if err := options.validate(); err != nil {
+	if err := ops.validate(); err != nil {
 		return "", err
 	}
 
-	modifyInputOptionColors(options)
+	modifyInputOptionColors(ops)
 
 
-	label := options.Prefix + options.Question
+	label := ops.Prefix + ops.Question
 
 	fmt.Println(label)
 
-	if options.AnswersColor != nil {
-		for i := range options.Answers {
-			fmt.Printf("%d. %s\n", i, colorbin.ColorStrings(*options.AnswersColor, options.Answers...)[i])
+	if ops.AnswersColor != nil {
+		for i := range ops.Answers {
+			fmt.Printf("%d. %s\n", i, colorbin.ColorStrings(*ops.AnswersColor, ops.Answers...)[i])
 		}
 	} else {
-		for i := range options.Answers {
-			fmt.Printf("%d. %s\n", i, options.Answers[i])
+		for i := range ops.Answers {
+			fmt.Printf("%d. %s\n", i, ops.Answers[i])
 		}
 	}
 	
@@ -152,4 +152,31 @@ func Confirm(ops *InputOptions, defaultYes bool) bool {
 	default:
 		return defaultYes
 	}
+}
+
+// Text takes in a set of options and displays a single prompt to the user. 
+// Users response is returned as a string.
+func Text(ops *InputOptions) (string, error) {
+
+	// Nil check on ops
+	if ops == nil {
+		return "", ErrNilInputOptions
+	}
+
+	// Colors input options if fields are filled
+	modifyInputOptionColors(ops)
+	
+	// Prints the question from ops
+	fmt.Printf("%s", ops.Question)
+
+	// Storage for users response
+	var usersInput string
+
+	// Grab users input
+	_, err := fmt.Scan(&usersInput)
+	if err != nil {
+		return "", ErrNoInputGiven
+	}
+
+	return usersInput, nil
 }
