@@ -72,8 +72,14 @@ type Context struct {
 	// Value that is gathered after a command. (e.g "appname" "command" "parsedvalue")
 	ParsedValue string
 
+	// MultipleParsedValues stores all values gathered after a command
+	MultipleParsedValues []string
+
 	// Value that is gathered after a flag. (e.g "--output", "--port")
 	ParsedFlagValue string
+
+	// MultipleParsedFlagValues stores every value after a flag
+	MultipleParsedFlagValues []string
 
 	// argCount stores the recursive counter for subcommands
 	argCount int
@@ -151,6 +157,31 @@ func (ctx *Context) gatherParsedValue(args []string, cmd *Command) error {
 	return nil
 }
 
+func (ctx *Context) gatherMultipleParsedValues(args []string, cmd *Command) error {
+	// Context nil check
+	if ctx == nil {
+		return ErrNilContext
+	}
+
+	parsedArgs := make([]string, 0)
+
+	if len(args) == 0 {
+		return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
+	}
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			break
+		}
+
+		parsedArgs = append(parsedArgs, arg)
+	}
+	
+	ctx.MultipleParsedValues = parsedArgs
+	return nil
+}
+
+
 // Run is the execution of your program with all combined commands.
 func (r *Root) Run() error {
 	// Validates the Root object to make sure it's valid.
@@ -166,7 +197,9 @@ func (r *Root) Run() error {
 		Values:          make(map[string]any),
 		Args:            args,
 		ParsedValue:     "",
+		MultipleParsedValues: make([]string, 0),
 		ParsedFlagValue: "",
+		MultipleParsedFlagValues: make([]string, 0),
 		argCount:        0,
 	}
 
@@ -222,6 +255,11 @@ func (r *Root) Run() error {
 			// Gathers immediate value after command
 			if err := ctx.gatherParsedValue(args[start:], cmd); err != nil {
 				return err
+			}
+
+			// Gathers every value after a command, breaks when a flag is found
+			if err := ctx.gatherMultipleParsedValues(args[start:], cmd); err != nil {
+				return err 
 			}
 
 			i += ctx.argCount

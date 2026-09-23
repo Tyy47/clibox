@@ -202,6 +202,7 @@ func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) (bool, error) {
 	for _, entry := range flags {
 		// Assign flag value to context
 		ctx.ParsedFlagValue = entry.value
+		ctx.MultipleParsedFlagValues = append(ctx.MultipleParsedFlagValues, entry.value)
 
 		// Validate flag
 		if err := entry.flag.validate(); err != nil {
