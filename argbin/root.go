@@ -102,7 +102,7 @@ func (r *Root) validateCommandList() error {
 }
 
 // parseCommand checks if a given argument is apart of the Roots CommandList.
-func (r *Root) parseCommand(ctx *Context, arg string) (*Command, error) {
+func (r *Root) parseCommand(ctx *CommandContext, arg string) (*Command, error) {
 	// Loop through each command in CommandList
 	for _, cmd := range r.CommandList {
 		// Validates each command
