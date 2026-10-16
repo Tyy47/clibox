@@ -120,21 +120,29 @@ func Prompt(ops *InputOptions) (string, error) {
 // "yes" returns true and "no" false. defaultYes will make the default option yes if the user presses enter with no entry.
 func Confirm(ops *InputOptions, defaultYes bool) bool {
 
+	// Skip input options toggle if user set it to nil
+	var skipOps bool = true
+
+	// ops nil check
+	if ops != nil { skipOps = false }
+
 	// Valid check for ops input
-	ops.validate()
+	if !skipOps { ops.validate() }
 
 	// Modify colors if given
 	modifyInputOptionColors(ops)
 
 	// Display the prompt to the user
-	fmt.Println(ops.Question)
+	if !skipOps { fmt.Println(ops.Question) }
 	
 	// Init the string container
 	var userInput string
 
 	// Prints prefix if available
-	if ops.Prefix != "" {
-		fmt.Println(ops.Prefix)
+	if !skipOps {
+		if ops.Prefix != "" {
+			fmt.Println(ops.Prefix)
+		}
 	}
 
 	// Grab users entry
