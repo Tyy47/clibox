@@ -15,7 +15,7 @@ var (
 
 	ErrNilArray          = errors.New("array cannot be nil")
 	ErrNilMap            = errors.New("map cannot be nil")
-	ErrEmptyHelpMenu  = errors.New("description field cannot be empty")
+	ErrEmptyHelpMenu     = errors.New("description field cannot be empty")
 	ErrNilCommand        = errors.New("command cannot be nil")
 	ErrMissingArguments  = errors.New("no arguments provided")
 	ErrUnknownCommand    = errors.New("unknown command")
@@ -45,8 +45,8 @@ var (
 
 	// Subcommand errors
 
-	ErrSubcommandMissingExecute = errors.New("subcommand is missing execute function")
-	ErrSubcommandMissingArgs    = errors.New("subcommand is missing required arguments")
+	ErrSubcommandMissingExecute  = errors.New("subcommand is missing execute function")
+	ErrSubcommandMissingArgs     = errors.New("subcommand is missing required arguments")
 	ErrExecuteSubcommandsToggled = errors.New("execute and subcommands field in command cannot both be enabled")
 
 	// Flag Errors
@@ -59,7 +59,7 @@ var (
 )
 
 // Context is a list of data that can be used to store and access data.
-type Context struct {
+type CommandContext struct {
 	// Command stores the executed command. Can be accessed for command fields.
 	Command *Command
 
@@ -86,7 +86,7 @@ type Context struct {
 }
 
 // Validate checks if a context object is valid for processing, returns an error if it's not.
-func (c *Context) Validate() error {
+func (c *CommandContext) Validate() error {
 	// Checks if context is nil, returns an error if so.
 	if c == nil {
 		return ErrNilContext
@@ -107,7 +107,7 @@ func (c *Context) Validate() error {
 }
 
 // ToggleValue switches values inside of Context.Values, returns an error if unable to make changes.
-func (ctx *Context) ToggleValue(key string, toggle bool) error {
+func (ctx *CommandContext) ToggleValue(key string, toggle bool) error {
 	if ctx == nil {
 		return ErrNilContext
 	}
@@ -125,7 +125,7 @@ func (ctx *Context) ToggleValue(key string, toggle bool) error {
 }
 
 // GetValue retrieves a value from a given key, returns the value and an error if failed.
-func (ctx *Context) GetValue(key string) (any, error) {
+func (ctx *CommandContext) GetValue(key string) (any, error) {
 	if ctx == nil {
 		return nil, ErrNilContext
 	}
@@ -141,23 +141,23 @@ func (ctx *Context) GetValue(key string) (any, error) {
 }
 
 // gatherParsedValue gets the immediate value after a command and stores it in ctx.ParsedValue.
-func (ctx *Context) gatherParsedValue(args []string, cmd *Command) error {
+func (ctx *CommandContext) gatherParsedValue(args []string, cmd *Command) error {
 	// Context nil check
 	if ctx == nil {
 		return ErrNilContext
 	}
-	
+
 	// Checks if an argument was given or not, returns an error if not.
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
 	}
-	
+
 	// Assigns ParsedValue to the next arg
 	ctx.ParsedValue = args[0]
 	return nil
 }
 
-func (ctx *Context) gatherMultipleParsedValues(args []string, cmd *Command) error {
+func (ctx *CommandContext) gatherMultipleParsedValues(args []string, cmd *Command) error {
 	// Context nil check
 	if ctx == nil {
 		return ErrNilContext
@@ -176,11 +176,10 @@ func (ctx *Context) gatherMultipleParsedValues(args []string, cmd *Command) erro
 
 		parsedArgs = append(parsedArgs, arg)
 	}
-	
+
 	ctx.MultipleParsedValues = parsedArgs
 	return nil
 }
-
 
 // Run is the execution of your program with all combined commands.
 func (r *Root) Run() error {
@@ -193,14 +192,14 @@ func (r *Root) Run() error {
 	args := *utils.GetArgs()
 
 	// Creates the context object to store user data.
-	ctx := Context{
-		Values:          make(map[string]any),
-		Args:            args,
-		ParsedValue:     "",
-		MultipleParsedValues: make([]string, 0),
-		ParsedFlagValue: "",
+	ctx := CommandContext{
+		Values:                   make(map[string]any),
+		Args:                     args,
+		ParsedValue:              "",
+		MultipleParsedValues:     make([]string, 0),
+		ParsedFlagValue:          "",
 		MultipleParsedFlagValues: make([]string, 0),
-		argCount:        0,
+		argCount:                 0,
 	}
 
 	// Checks if the app execution is valid, if there is zero arguments, it returns an error.
@@ -246,7 +245,7 @@ func (r *Root) Run() error {
 		if cmd.TakesValue {
 			// starting point for indexing
 			start := i + ctx.argCount + 1
-			
+
 			// Check to see if the starting point is greater or equal to arguments length
 			if start >= len(args) {
 				return fmt.Errorf("%s %w", cmd.Name, ErrRequiresInput)
@@ -259,13 +258,13 @@ func (r *Root) Run() error {
 
 			// Gathers every value after a command, breaks when a flag is found
 			if err := ctx.gatherMultipleParsedValues(args[start:], cmd); err != nil {
-				return err 
+				return err
 			}
 
 			i += ctx.argCount
 			i++
 		}
-		
+
 		// Checks if the cmd execute is nil
 		if cmd.Execute == nil {
 			// Returns an error if a subcommand is missing arguments
@@ -274,7 +273,7 @@ func (r *Root) Run() error {
 			}
 
 			return fmt.Errorf("%s %w", cmd.Name, ErrSubcommandMissingExecute)
-			
+
 		}
 
 		// Executes a command using the given context to manipulate.

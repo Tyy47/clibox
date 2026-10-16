@@ -15,7 +15,7 @@ type Flag struct {
 // FlagFunction configures a flag using the provided Context.                           
 //                                                                                         
 // Return a non-nil error to stop configuration and report the failure.                    
-type FlagFunction func(ctx *Context) error
+type FlagFunction func(ctx *CommandContext) error
 
 // validate runs a check to make sure a given flag is valid for argbin.
 func (f *Flag) validate() error {

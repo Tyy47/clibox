@@ -32,7 +32,7 @@ type Command struct {
 	TakesValue bool
 
 	// Execute runs the commands given function.
-	Execute func(ctx *Context) error
+	Execute func(ctx *CommandContext) error
 
 	// Subcommands stores commands for branching commands
 	Subcommands []*Command
@@ -180,7 +180,7 @@ func (c *Command) parseFlags(args []string) ([]parsedFlag, []string, error) {
 }
 
 // runFlags handles the parsing and execution of flags from given arguments.
-func (c *Command) runFlags(ctx *Context, args []string) (bool, error) {
+func (c *Command) runFlags(ctx *CommandContext, args []string) (bool, error) {
 	// Gather functions, unknown flags, and error
 	flags, unknown, err := c.parseFlags(args)
 	// Error check for parseFlags
@@ -197,7 +197,7 @@ func (c *Command) runFlags(ctx *Context, args []string) (bool, error) {
 }
 
 // executeFlags runs each flags related function. Valid flags are gathered from parseFlags().
-func (c *Command) executeFlags(ctx *Context, flags []parsedFlag) (bool, error) {
+func (c *Command) executeFlags(ctx *CommandContext, flags []parsedFlag) (bool, error) {
 	// Loop through each parsed flag
 	for _, entry := range flags {
 		// Assign flag value to context
@@ -248,7 +248,7 @@ func (c *Command) validate() error {
 }
 
 // parseSubcommand finds a subcommand based on the given args. Returns the subcommand if found, if not, it'll return the original command and an error.
-func (c *Command) parseSubcommand(args []string, ctx *Context) (*Command, error) {
+func (c *Command) parseSubcommand(args []string, ctx *CommandContext) (*Command, error) {
 	// Check to see if the command is valid
 	if err := c.validate(); err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func (c *Command) parseSubcommand(args []string, ctx *Context) (*Command, error)
 }
 
 // checkSubcommands checks if a given subcommand is valid. If it is valid, it will return the subcommand, if not, it will return the original command.
-func checkSubcommands(cmd *Command, ctx *Context) (*Command, error) {
+func checkSubcommands(cmd *Command, ctx *CommandContext) (*Command, error) {
 	// Check to see if given command is valid
 	if err := cmd.validate(); err != nil {
 		return nil, err

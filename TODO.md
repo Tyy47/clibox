@@ -9,3 +9,6 @@
 - Add code documentation for String() method.
 
 ## inputbin
+
+### Bugs
+- Confirm prompt doesn't close when an incorrect answer is given the first time.
