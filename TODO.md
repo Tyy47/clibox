@@ -10,5 +10,8 @@
 
 ## inputbin
 
+## Misc
+- Refactor error handling for validation checks for structs to return a joined slice of errors rather then dishing out errors individually. Done through errors.Join().
+
 ### Bugs
 - Confirm prompt doesn't close when an incorrect answer is given the first time.
